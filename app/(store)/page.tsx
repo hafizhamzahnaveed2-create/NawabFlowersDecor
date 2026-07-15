@@ -8,6 +8,7 @@ import {
   getSaleProducts,
 } from "@/lib/repositories/products";
 import { listCategories } from "@/lib/repositories/categories";
+import { getPublishedBlock } from "@/lib/repositories/content";
 
 export const revalidate = 300;
 
@@ -21,17 +22,22 @@ const categoryImages: Record<string, string> = {
 };
 
 export default async function HomePage() {
-  const [bestSellers, newArrivals, saleProducts, categories] =
+  const [bestSellers, newArrivals, saleProducts, categories, heroBlock] =
     await Promise.all([
       getBestSellers(8),
       getNewArrivals(8),
       getSaleProducts(8),
       listCategories(),
+      getPublishedBlock("home.hero"),
     ]);
 
   return (
     <>
-      <Hero />
+      <Hero
+        title={heroBlock?.title}
+        body={heroBlock?.body}
+        imageUrl={heroBlock?.imageUrl}
+      />
 
       {/* Category tiles */}
       <section className="mx-auto max-w-6xl px-6 py-12">

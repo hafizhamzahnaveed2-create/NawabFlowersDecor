@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { getOrderByNumber } from "@/lib/repositories/orders";
 import { formatPrice } from "@/lib/money";
 
@@ -25,12 +26,26 @@ const deliveryDateFormatter = new Intl.DateTimeFormat("en-PK", {
 
 export default async function OrderConfirmationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orderNumber: string }>;
+  searchParams: Promise<{ t?: string }>;
 }) {
-  const { orderNumber } = await params;
+  const [{ orderNumber }, { t }, session] = await Promise.all([
+    params,
+    searchParams,
+    auth(),
+  ]);
   const order = await getOrderByNumber(orderNumber);
   if (!order) notFound();
+
+  // Viewable only by: the customer who placed it, staff/admin, or anyone
+  // holding the access token from the confirmation redirect (guests).
+  const isOwner = !!session?.user && order.userId === session.user.id;
+  const isStaff =
+    session?.user?.role === "ADMIN" || session?.user?.role === "STAFF";
+  const hasToken = !!t && t === order.accessToken;
+  if (!isOwner && !isStaff && !hasToken) notFound();
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">

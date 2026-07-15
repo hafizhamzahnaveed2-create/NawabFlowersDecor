@@ -159,7 +159,7 @@ export async function createOrder(
         postalCode: input.postalCode || null,
         items: { create: lines },
       },
-      select: { id: true, orderNumber: true, total: true },
+      select: { id: true, orderNumber: true, total: true, accessToken: true },
     });
   });
 }
@@ -167,6 +167,8 @@ export async function createOrder(
 export type OrderSummary = {
   id: string;
   orderNumber: string;
+  userId: string | null;
+  accessToken: string;
   status: string;
   paymentStatus: string;
   paymentMethod: string | null;
@@ -217,6 +219,8 @@ export async function getOrderByNumber(
   return {
     id: order.id,
     orderNumber: order.orderNumber,
+    userId: order.userId,
+    accessToken: order.accessToken,
     status: order.status,
     paymentStatus: order.paymentStatus,
     paymentMethod: order.paymentMethod,

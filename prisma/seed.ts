@@ -587,6 +587,37 @@ async function main() {
   }
   console.log(`Seeded ${PRODUCTS.length} products.`);
 
+  // ---------------------------------------------------------------- Content
+  // Editable homepage blocks (admin > Content). Update only creates missing
+  // rows so a shopkeeper's edits survive re-seeding.
+  const contentBlocks = [
+    {
+      key: "home.hero",
+      kind: "HERO_SLIDE" as const,
+      title: "Flowers that say it before you do",
+      body: "Hand-tied bouquets for every occasion, individual stems for your own arrangements, and gifts to go with them.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=1200&q=80",
+      isPublished: true,
+    },
+    {
+      key: "announcement.main",
+      kind: "ANNOUNCEMENT" as const,
+      title: "Same-day preparation · Next-day delivery across Lahore",
+      body: null,
+      imageUrl: null,
+      isPublished: true,
+    },
+  ];
+  for (const block of contentBlocks) {
+    await prisma.contentBlock.upsert({
+      where: { key: block.key },
+      update: {},
+      create: block,
+    });
+  }
+  console.log(`Seeded ${contentBlocks.length} content blocks.`);
+
   const counts = {
     products: await prisma.product.count(),
     categories: await prisma.category.count(),

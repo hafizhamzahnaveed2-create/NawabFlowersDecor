@@ -10,10 +10,25 @@ import {
   useTransform,
 } from "framer-motion";
 
+const DEFAULTS = {
+  title: "Flowers that say it before you do",
+  body: "Hand-tied bouquets for every occasion, individual stems for your own arrangements, and gifts to go with them.",
+  imageUrl:
+    "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=1200&q=80",
+};
+
 // The storefront's one ambient motion: the hero photo drifts a few pixels as
 // the page scrolls, like a print catalogue page catching light. Disabled
 // entirely under prefers-reduced-motion.
-export function Hero() {
+export function Hero({
+  title,
+  body,
+  imageUrl,
+}: {
+  title?: string | null;
+  body?: string | null;
+  imageUrl?: string | null;
+}) {
   const ref = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({
@@ -33,11 +48,10 @@ export function Hero() {
             Fresh · Hand-tied · Delivered on time
           </p>
           <h1 className="mt-4 font-display text-5xl leading-[1.05] text-burgundy sm:text-6xl">
-            Flowers that say it before you do
+            {title || DEFAULTS.title}
           </h1>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-ink/75">
-            Hand-tied bouquets for every occasion, individual stems for your
-            own arrangements, and gifts to go with them.
+            {body || DEFAULTS.body}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
@@ -59,10 +73,13 @@ export function Hero() {
           className="relative aspect-[4/5] max-h-[520px] overflow-hidden rounded-petal shadow-bloom-lg"
         >
           <Image
-            src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=1200&q=80"
+            src={imageUrl || DEFAULTS.imageUrl}
             alt="A hand-tied bouquet of blush and cream roses"
             fill
             priority
+            unoptimized={
+              !!imageUrl && !imageUrl.includes("images.unsplash.com")
+            }
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover"
           />

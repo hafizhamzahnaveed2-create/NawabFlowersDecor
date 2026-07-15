@@ -43,11 +43,11 @@ export function CheckoutForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not place the order");
-      return data.order as { orderNumber: string };
+      return data.order as { orderNumber: string; accessToken: string };
     },
     onSuccess: (order) => {
       clear();
-      router.push(`/order/${order.orderNumber}`);
+      router.push(`/order/${order.orderNumber}?t=${order.accessToken}`);
     },
     onError: (error: Error) => setServerError(error.message),
   });

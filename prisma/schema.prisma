@@ -368,6 +368,8 @@ enum PaymentStatus {
 model Order {
   id          String @id @default(cuid())
   orderNumber String @unique // human-friendly, e.g. "NF-2026-000123"
+  // Unguessable token gating the guest-facing confirmation page.
+  accessToken String @unique @default(cuid())
 
   userId     String? // null for guest checkout
   guestEmail String?

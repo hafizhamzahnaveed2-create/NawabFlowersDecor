@@ -47,7 +47,9 @@ Conventions:
 - **All schema changes go through Prisma Migrate** (`npm run db:migrate`) —
   never edit the Neon database directly.
 - `/admin/*` requires `STAFF` or `ADMIN`; `/account/*` requires sign-in —
-  enforced in `middleware.ts`, not just hidden in the UI.
+  enforced in `proxy.ts` (Next 16 edge auth), not just hidden in the UI.
+- Order confirmation pages require the access token from checkout (`?t=…`),
+  account ownership, or staff role — order numbers alone are not enough.
 
 ## Database workflow (Neon)
 
@@ -66,6 +68,17 @@ Type: Fraunces (display) + Karla (body). Motion is restrained and physical;
 
 ## Build phases
 
-Phase 1 (foundation: scaffolding, tokens, schema + Neon migration, auth) — **done**.
-Next: Phase 2 (MVP storefront), Phase 3 (admin MVP), Phase 4 (bouquet builder),
-then growth, CMS, analytics, hardening, security/CI, optional AI.
+Phase 1 (foundation) — **done**.
+Phase 2 (MVP storefront) — **done**.
+Phase 3 (admin MVP: products, orders, homepage content) — **done**.
+Next: Phase 4 (bouquet builder), then growth, full CMS, analytics, hardening,
+security/CI, optional AI.
+
+## Admin
+
+Sign in with the seeded admin account, then open `/admin`:
+
+- **Dashboard** — today’s deliveries, revenue, low-stock alerts
+- **Products** — create/edit/delete with flags, variants, sale pricing
+- **Orders** — filter, search, update status
+- **Content** — edit homepage hero and announcement bar (no deploy needed)
