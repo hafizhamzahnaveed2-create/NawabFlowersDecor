@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/*
+ * Nawab Flowers Decorr — design tokens.
+ * Palette is rooted in flowers, not e-commerce templates:
+ *   ivory    — warm paper base, like florist wrap
+ *   blush    — soft petal pink (accent, never large fills)
+ *   sage     — muted foliage green (secondary)
+ *   burgundy — deep floral red, the brand's primary
+ *   ink      — warm near-black for text
+ *   stone    — warm neutral for borders and quiet surfaces
+ */
+:root {
+  --ivory: #faf7f1;
+  --blush: #e7b8b4;
+  --blush-deep: #cf8f8b;
+  --sage: #7d8b6a;
+  --sage-soft: #aab89a;
+  --burgundy: #582b35;
+  --burgundy-deep: #3f1e26;
+  --ink: #2b2724;
+  --stone: #eae3d8;
+}
+
+@theme inline {
+  --color-ivory: var(--ivory);
+  --color-blush: var(--blush);
+  --color-blush-deep: var(--blush-deep);
+  --color-sage: var(--sage);
+  --color-sage-soft: var(--sage-soft);
+  --color-burgundy: var(--burgundy);
+  --color-burgundy-deep: var(--burgundy-deep);
+  --color-ink: var(--ink);
+  --color-stone: var(--stone);
+
+  /* Fraunces: characterful display serif with soft, organic curves.
+     Karla: warm humanist grotesque for body copy. */
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-karla);
+
+  /* Organic, slightly generous radii — petals, not cards. */
+  --radius-petal: 1.25rem;
+
+  /* Natural shadows: soft, diffuse, warm-tinted — no harsh drops. */
+  --shadow-bloom: 0 1px 2px rgb(43 39 36 / 0.05), 0 8px 24px rgb(88 43 53 / 0.08);
+  --shadow-bloom-lg: 0 2px 4px rgb(43 39 36 / 0.06), 0 16px 40px rgb(88 43 53 / 0.12);
+}
+
+body {
+  background: var(--ivory);
+  color: var(--ink);
+  font-family: var(--font-karla), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--blush);
+  color: var(--burgundy-deep);
+}
+
+/* Visible, brand-consistent keyboard focus everywhere (WCAG). */
+:focus-visible {
+  outline: 2px solid var(--burgundy);
+  outline-offset: 2px;
+}
+
+/* Respect reduced motion globally; component animations must also check it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

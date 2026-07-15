@@ -1,0 +1,522 @@
+// Nawab Flowers Decorr — core domain schema (Phase 1).
+// All schema changes go through Prisma Migrate. Do not edit the database directly.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+// Connection URLs live in prisma.config.ts (CLI/migrations, direct URL)
+// and lib/db.ts (runtime, pooled URL via the Neon adapter).
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Auth & people
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  CUSTOMER
+  STAFF
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  phone         String?
+  role          UserRole  @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  addresses      Address[]
+  orders         Order[]
+  reviews        Review[]
+  customBouquets CustomBouquet[]
+  staffProfile   StaffProfile?
+  activityLogs   ActivityLog[]
+}
+
+// NextAuth (Auth.js v5) adapter models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Staff sub-roles beyond the coarse UserRole (e.g. Catalog Manager,
+// Order Fulfillment) with granular permissions, per Section 4 of the brief.
+model StaffRole {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+
+  permissions   StaffRolePermission[]
+  staffProfiles StaffProfile[]
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  key         String  @unique // e.g. "catalog.write", "orders.fulfill"
+  description String?
+
+  roles StaffRolePermission[]
+}
+
+model StaffRolePermission {
+  staffRoleId  String
+  permissionId String
+
+  staffRole  StaffRole  @relation(fields: [staffRoleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([staffRoleId, permissionId])
+}
+
+model StaffProfile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  staffRoleId String?
+  isActive    Boolean @default(true)
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  staffRole StaffRole? @relation(fields: [staffRoleId], references: [id], onDelete: SetNull)
+}
+
+model Address {
+  id            String  @id @default(cuid())
+  userId        String
+  label         String? // "Home", "Office"
+  recipientName String
+  phone         String
+  line1         String
+  line2         String?
+  city          String
+  area          String? // neighbourhood / delivery zone
+  postalCode    String?
+  country       String  @default("PK")
+  isDefault     Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Catalog & taxonomy
+// ---------------------------------------------------------------------------
+
+enum ProductType {
+  BOUQUET
+  RAW_MATERIAL
+  ADDON
+}
+
+// Primary browsing tree: e.g. "Bouquets" > "Birthday", "Raw Materials" > "Stems".
+model Category {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+  imageUrl    String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  subCategories SubCategory[]
+  products      Product[]
+}
+
+model SubCategory {
+  id         String  @id @default(cuid())
+  categoryId String
+  name       String
+  slug       String  @unique
+  imageUrl   String?
+  sortOrder  Int     @default(0)
+  isActive   Boolean @default(true)
+
+  category Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@index([categoryId])
+}
+
+// Cross-cutting browse axes: a bouquet is simultaneously an occasion
+// (birthday), a flower type (roses), a colour, a season. Tags let products
+// live on several axes at once without duplicating the category tree.
+enum TagKind {
+  OCCASION
+  FLOWER_TYPE
+  COLOR
+  SEASON
+}
+
+model Tag {
+  id   String  @id @default(cuid())
+  kind TagKind
+  name String
+  slug String  @unique
+
+  products ProductTag[]
+
+  @@unique([kind, name])
+}
+
+model ProductTag {
+  productId String
+  tagId     String
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([productId, tagId])
+}
+
+model Product {
+  id           String      @id @default(cuid())
+  type         ProductType
+  name         String
+  slug         String      @unique
+  description  String?
+  sku          String?     @unique
+  price        Decimal     @db.Decimal(10, 2)
+  salePrice    Decimal?    @db.Decimal(10, 2)
+  saleStartsAt DateTime?
+  saleEndsAt   DateTime?
+  stock        Int         @default(0)
+  isBestSeller Boolean     @default(false)
+  isNewArrival Boolean     @default(false)
+  isFeatured   Boolean     @default(false)
+  isActive     Boolean     @default(true)
+
+  categoryId    String
+  subCategoryId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category         Category          @relation(fields: [categoryId], references: [id])
+  subCategory      SubCategory?      @relation(fields: [subCategoryId], references: [id], onDelete: SetNull)
+  images           ProductImage[]
+  variants         ProductVariant[]
+  tags             ProductTag[]
+  reviews          Review[]
+  orderItems       OrderItem[]
+  builderComponent BouquetComponent?
+
+  @@index([categoryId])
+  @@index([subCategoryId])
+  @@index([type, isActive])
+  @@index([isBestSeller])
+  @@index([isNewArrival])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  url       String // blob-storage URL; Neon stores URLs only
+  alt       String?
+  sortOrder Int     @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+// Size / colour / stem-count variants, e.g. "12 stems", "24 stems", "Grand".
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  name      String
+  sku       String?  @unique
+  price     Decimal  @db.Decimal(10, 2) // absolute price for this variant
+  stock     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([productId])
+}
+
+// ---------------------------------------------------------------------------
+// Build-Your-Own Bouquet
+// ---------------------------------------------------------------------------
+
+enum ComponentKind {
+  STEM
+  GREENERY
+  WRAP
+  RIBBON
+  VASE
+  CARD
+}
+
+// A raw material exposed in the builder. Optionally linked to the same item
+// sold standalone as a RAW_MATERIAL product, so stock can be managed once.
+model BouquetComponent {
+  id        String        @id @default(cuid())
+  kind      ComponentKind
+  name      String
+  imageUrl  String?
+  unitPrice Decimal       @db.Decimal(10, 2)
+  stock     Int           @default(0)
+  minQty    Int           @default(0)
+  maxQty    Int           @default(50)
+  sortOrder Int           @default(0)
+  isActive  Boolean       @default(true)
+  productId String?       @unique
+
+  product Product?            @relation(fields: [productId], references: [id], onDelete: SetNull)
+  usedIn  CustomBouquetItem[]
+
+  @@index([kind, isActive])
+}
+
+// A customer-built bouquet. Prices and names are snapshotted onto the items
+// at creation time: later component changes never mutate a saved design or
+// a past order.
+model CustomBouquet {
+  id              String   @id @default(cuid())
+  userId          String? // null for guest sessions
+  name            String? // customer-given name, e.g. "For Ammi"
+  totalPrice      Decimal  @db.Decimal(10, 2)
+  previewImageUrl String?
+  shareToken      String?  @unique // for save/share links
+  createdAt       DateTime @default(now())
+
+  user       User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items      CustomBouquetItem[]
+  orderItems OrderItem[]
+
+  @@index([userId])
+}
+
+model CustomBouquetItem {
+  id              String  @id @default(cuid())
+  customBouquetId String
+  componentId     String?
+  componentKind   ComponentKind
+  componentName   String // snapshot
+  unitPrice       Decimal @db.Decimal(10, 2) // snapshot
+  quantity        Int
+
+  customBouquet CustomBouquet     @relation(fields: [customBouquetId], references: [id], onDelete: Cascade)
+  component     BouquetComponent? @relation(fields: [componentId], references: [id], onDelete: SetNull)
+
+  @@index([customBouquetId])
+}
+
+// ---------------------------------------------------------------------------
+// Orders & fulfilment
+// ---------------------------------------------------------------------------
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+  FAILED
+}
+
+model Order {
+  id          String @id @default(cuid())
+  orderNumber String @unique // human-friendly, e.g. "NF-2026-000123"
+
+  userId     String? // null for guest checkout
+  guestEmail String?
+  guestPhone String?
+
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  paymentMethod String? // "stripe" | "cod" | future local gateways
+
+  subtotal       Decimal @db.Decimal(10, 2)
+  discountAmount Decimal @default(0) @db.Decimal(10, 2)
+  deliveryFee    Decimal @default(0) @db.Decimal(10, 2)
+  total          Decimal @db.Decimal(10, 2)
+  couponId       String?
+
+  // Flowers are time-sensitive: delivery scheduling is first-class.
+  deliveryDate     DateTime @db.Date
+  deliveryTimeSlot String // e.g. "09:00-12:00"
+  giftMessage      String?
+
+  // Delivery address snapshot (kept even if the customer edits their address book).
+  recipientName String
+  recipientPhone String
+  addressLine1  String
+  addressLine2  String?
+  city          String
+  area          String?
+  postalCode    String?
+  country       String  @default("PK")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  coupon Coupon?     @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  items  OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([deliveryDate])
+  @@index([createdAt])
+}
+
+// An order line is EITHER a catalog product (optionally a specific variant)
+// OR a custom bouquet. Name and unit price are snapshots taken at purchase.
+model OrderItem {
+  id              String  @id @default(cuid())
+  orderId         String
+  productId       String?
+  variantId       String?
+  customBouquetId String?
+
+  nameSnapshot String
+  unitPrice    Decimal @db.Decimal(10, 2)
+  quantity     Int
+  lineTotal    Decimal @db.Decimal(10, 2)
+
+  order         Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  customBouquet CustomBouquet?  @relation(fields: [customBouquetId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// ---------------------------------------------------------------------------
+// Promotions, reviews, content, audit
+// ---------------------------------------------------------------------------
+
+enum CouponKind {
+  PERCENT
+  FIXED
+}
+
+model Coupon {
+  id              String     @id @default(cuid())
+  code            String     @unique
+  kind            CouponKind
+  value           Decimal    @db.Decimal(10, 2) // percent (0-100) or fixed amount
+  minOrderAmount  Decimal?   @db.Decimal(10, 2)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  maxRedemptions  Int?
+  redemptionCount Int        @default(0)
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+
+  orders Order[]
+
+  @@index([isActive])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String
+  userId     String
+  rating     Int // 1-5, validated at the API boundary
+  title      String?
+  body       String?
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@index([productId, isApproved])
+}
+
+// CMS-editable storefront content: hero slides, banners, announcement bar,
+// testimonials, FAQs, policies. Rendered dynamically — no deploy needed.
+enum ContentBlockKind {
+  HERO_SLIDE
+  BANNER
+  ANNOUNCEMENT
+  TESTIMONIAL
+  FAQ
+  POLICY
+  SECTION
+}
+
+model ContentBlock {
+  id          String           @id @default(cuid())
+  kind        ContentBlockKind
+  key         String           @unique // e.g. "home.hero.1", "faq.delivery"
+  title       String?
+  body        String?
+  imageUrl    String?
+  linkUrl     String?
+  data        Json? // kind-specific extras (CTA labels, author, etc.)
+  sortOrder   Int              @default(0)
+  isPublished Boolean          @default(true)
+  updatedAt   DateTime         @updatedAt
+
+  @@index([kind, isPublished])
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  userId     String? // who did it (null for system actions)
+  action     String // e.g. "product.update", "order.status_change"
+  entityType String
+  entityId   String?
+  detail     Json?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
