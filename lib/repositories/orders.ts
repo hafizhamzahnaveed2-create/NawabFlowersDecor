@@ -201,6 +201,37 @@ export async function createOrder(
 
   const total = Math.max(0, subtotal - discountAmount) + DELIVERY_FEE;
 
+  let paymentAccountId: string | null = null;
+  let paymentMethod = input.paymentMethod;
+  let paymentVerificationStatus:
+    | "NOT_REQUIRED"
+    | "PENDING"
+    | "VERIFIED"
+    | "REJECTED" = "NOT_REQUIRED";
+  let transactionId: string | null = null;
+  let receiptImageUrl: string | null = null;
+
+  if (input.paymentMethod === "cod") {
+    paymentMethod = "cod";
+  } else {
+    const account = await prisma.paymentAccount.findFirst({
+      where: {
+        isActive: true,
+        ...(input.paymentAccountId
+          ? { id: input.paymentAccountId }
+          : { slug: input.paymentMethod }),
+      },
+    });
+    if (!account) {
+      throw new CheckoutError("That payment method isn’t available");
+    }
+    paymentAccountId = account.id;
+    paymentMethod = account.slug;
+    paymentVerificationStatus = "PENDING";
+    transactionId = input.transactionId || null;
+    receiptImageUrl = input.receiptImageUrl || null;
+  }
+
   const order = await prisma.$transaction(async (tx) => {
     for (const line of lines) {
       if (line.customBouquetId && line.componentDecrements) {
@@ -268,7 +299,11 @@ export async function createOrder(
         guestEmail: userId ? null : input.guestEmail || null,
         status: "PENDING",
         paymentStatus: "UNPAID",
-        paymentMethod: input.paymentMethod,
+        paymentMethod,
+        paymentAccountId,
+        transactionId,
+        receiptImageUrl,
+        paymentVerificationStatus,
         subtotal,
         discountAmount,
         deliveryFee: DELIVERY_FEE,

@@ -886,6 +886,90 @@ async function main() {
   }
   console.log(`Seeded ${coupons.length} coupons.`);
 
+  // ---------------------------------------------------------------- Payments & contact
+  await prisma.siteSetting.upsert({
+    where: { key: "whatsapp.number" },
+    update: {},
+    create: { key: "whatsapp.number", value: "923001234567" },
+  });
+
+  const paymentAccounts = [
+    {
+      slug: "jazzcash",
+      name: "JazzCash",
+      accountTitle: "Nawab Flowers Decor",
+      accountNumber: "03001234567",
+      iconKey: "jazzcash",
+      instructions: "Send the exact order total, then enter the TID at checkout.",
+      sortOrder: 0,
+      isActive: true,
+    },
+    {
+      slug: "easypaisa",
+      name: "EasyPaisa",
+      accountTitle: "Nawab Flowers Decor",
+      accountNumber: "03007654321",
+      iconKey: "easypaisa",
+      instructions: "Use EasyPaisa send money. Keep the confirmation SMS.",
+      sortOrder: 1,
+      isActive: true,
+    },
+    {
+      slug: "bank-transfer",
+      name: "Bank transfer",
+      accountTitle: "Nawab Flowers Decor",
+      accountNumber: "PK00AAAA0000000000000000",
+      iconKey: "bank",
+      instructions: "IBAN transfer. Upload the bank receipt screenshot.",
+      sortOrder: 2,
+      isActive: true,
+    },
+  ];
+  for (const a of paymentAccounts) {
+    await prisma.paymentAccount.upsert({
+      where: { slug: a.slug },
+      update: {},
+      create: a,
+    });
+  }
+
+  const socials = [
+    {
+      platform: "instagram",
+      url: "https://instagram.com/nawabflowers",
+      sortOrder: 0,
+      isEnabled: true,
+    },
+    {
+      platform: "facebook",
+      url: "https://facebook.com/nawabflowers",
+      sortOrder: 1,
+      isEnabled: true,
+    },
+    {
+      platform: "tiktok",
+      url: "https://tiktok.com/@nawabflowers",
+      sortOrder: 2,
+      isEnabled: false,
+    },
+    {
+      platform: "youtube",
+      url: "https://youtube.com/@nawabflowers",
+      sortOrder: 3,
+      isEnabled: false,
+    },
+  ];
+  for (const s of socials) {
+    await prisma.socialLink.upsert({
+      where: { platform: s.platform },
+      update: {},
+      create: s,
+    });
+  }
+  console.log(
+    `Seeded WhatsApp setting, ${paymentAccounts.length} payment accounts, ${socials.length} social links.`,
+  );
+
   const counts = {
     products: await prisma.product.count(),
     builderComponents: await prisma.bouquetComponent.count(),
@@ -896,6 +980,7 @@ async function main() {
     permissions: await prisma.permission.count(),
     users: await prisma.user.count(),
     coupons: await prisma.coupon.count(),
+    paymentAccounts: await prisma.paymentAccount.count(),
   };
   console.log("Seed complete:", counts);
 }

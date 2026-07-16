@@ -5,14 +5,19 @@ import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { AnnouncementBar } from "@/components/storefront/announcement-bar";
 import { PromoPopup } from "@/components/storefront/promo-popup";
 import { EventTracker } from "@/components/storefront/event-tracker";
+import { WhatsAppFloat } from "@/components/storefront/whatsapp-float";
 import { getPublishedBlock } from "@/lib/repositories/content";
+import { getWhatsAppNumber } from "@/lib/repositories/settings";
 
 export default async function StoreLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const popup = await getPublishedBlock("popup.main");
+  const [popup, whatsapp] = await Promise.all([
+    getPublishedBlock("popup.main"),
+    getWhatsAppNumber(),
+  ]);
 
   return (
     <Providers>
@@ -22,6 +27,7 @@ export default async function StoreLayout({
       <main className="flex-1">{children}</main>
       <Footer />
       <CartDrawer />
+      <WhatsAppFloat number={whatsapp} />
       <PromoPopup
         popup={
           popup

@@ -1,4 +1,4 @@
-# Nawab Flowers Decorr
+# Nawab Flowers Decor
 
 Full-stack florist storefront: fresh stems and raw materials, ready-made
 bouquets by occasion/flower type, a build-your-own bouquet builder, and gift
@@ -78,7 +78,9 @@ Phase 6 (content & marketing: CMS slides/banners/FAQ/policies/blog,
 promo popup, flash-sale countdown) — **done**.
 Phase 7 (analytics & reporting: KPIs, funnel, retention, CSV exports,
 Neon views, lightweight event tracking) — **done**.
-Next: enterprise hardening, then security/CI, optional AI.
+Payments & contact settings (WhatsApp float, manual payment accounts,
+social links, receipt uploads) — **done**.
+Next: Phase 8 enterprise hardening, then security/CI, optional AI.
 
 ## Admin
 
@@ -90,6 +92,8 @@ Sign in with the seeded admin account, then open `/admin`:
 - **Orders** — filter, search, update status
 - **Coupons** — create and manage promo codes
 - **Reviews** — moderate product reviews before they go live
+- **Payments** — JazzCash / EasyPaisa / bank accounts for manual checkout
+- **Settings** — WhatsApp number and social links
 - **Content** — homepage hero/announcement, banners, popup, FAQs, policies, journal
 - **Builder** — manage stems/greenery/wrap/ribbon/vase options for Build-Your-Own
 
@@ -102,3 +106,6 @@ Storefront content routes: `/faq`, `/blog`, `/policies/shipping`,
 
 Analytics lives at `/admin/analytics` (staff only). CSV exports:
 `/api/admin/analytics/export?type=orders|products|newsletter`.
+
+Receipt images upload via `/api/uploads` — Vercel Blob when
+`BLOB_READ_WRITE_TOKEN` is set, otherwise `public/uploads/` in local dev.

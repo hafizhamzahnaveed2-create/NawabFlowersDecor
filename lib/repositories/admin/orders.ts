@@ -64,6 +64,7 @@ export async function getAdminOrder(id: string) {
     where: { id },
     include: {
       user: { select: { name: true, email: true } },
+      paymentAccount: true,
       items: {
         include: {
           product: {
@@ -87,6 +88,17 @@ export async function getAdminOrder(id: string) {
     status: order.status,
     paymentStatus: order.paymentStatus,
     paymentMethod: order.paymentMethod,
+    paymentVerificationStatus: order.paymentVerificationStatus,
+    transactionId: order.transactionId,
+    receiptImageUrl: order.receiptImageUrl,
+    paymentAccount: order.paymentAccount
+      ? {
+          id: order.paymentAccount.id,
+          name: order.paymentAccount.name,
+          accountTitle: order.paymentAccount.accountTitle,
+          accountNumber: order.paymentAccount.accountNumber,
+        }
+      : null,
     customerName: order.user?.name ?? null,
     customerEmail: order.user?.email ?? order.guestEmail,
     subtotal: Number(order.subtotal),
@@ -111,7 +123,6 @@ export async function getAdminOrder(id: string) {
       quantity: item.quantity,
       lineTotal: Number(item.lineTotal),
       imageUrl: item.product?.images[0]?.url ?? null,
-      // Custom bouquet breakdown (Phase 4 will populate these)
       customComponents:
         item.customBouquet?.items.map((c) => ({
           name: c.componentName,
@@ -120,6 +131,46 @@ export async function getAdminOrder(id: string) {
         })) ?? null,
     })),
   };
+}
+
+export async function verifyOrderPayment(
+  orderId: string,
+  decision: "VERIFIED" | "REJECTED",
+  actorId: string,
+) {
+  if (decision === "VERIFIED") {
+    const order = await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        paymentVerificationStatus: "VERIFIED",
+        paymentStatus: "PAID",
+      },
+      select: { id: true, orderNumber: true, status: true },
+    });
+    await prisma.order.updateMany({
+      where: { id: orderId, status: "PENDING" },
+      data: { status: "CONFIRMED" },
+    });
+    await logActivity(actorId, "order.payment_verify", "Order", orderId, {
+      orderNumber: order.orderNumber,
+      decision,
+    });
+    return order;
+  }
+
+  const order = await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      paymentVerificationStatus: "REJECTED",
+      paymentStatus: "UNPAID",
+    },
+    select: { id: true, orderNumber: true, status: true },
+  });
+  await logActivity(actorId, "order.payment_verify", "Order", orderId, {
+    orderNumber: order.orderNumber,
+    decision,
+  });
+  return order;
 }
 
 export async function updateOrderStatus(

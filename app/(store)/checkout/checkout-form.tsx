@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea, FieldError } from "@/components/ui/field";
 import { useHydrated } from "@/lib/use-hydrated";
 import { AbandonedCartSync } from "@/components/storefront/abandoned-cart-sync";
+import { PaymentMethodIcon } from "@/components/storefront/brand-icons";
+import type { PaymentAccountPublic } from "@/components/storefront/payment-methods-footer";
 
 type FieldErrors = Partial<Record<string, string>>;
 
@@ -30,9 +32,11 @@ type AppliedCoupon = {
 export function CheckoutForm({
   isSignedIn,
   userEmail,
+  paymentAccounts,
 }: {
   isSignedIn: boolean;
   userEmail: string | null;
+  paymentAccounts: PaymentAccountPublic[];
 }) {
   const router = useRouter();
   const { lines, clear } = useCart();
@@ -46,8 +50,14 @@ export function CheckoutForm({
   );
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponBusy, setCouponBusy] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [transactionId, setTransactionId] = useState("");
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const syncEmail = isSignedIn ? userEmail : guestEmail;
+  const selectedAccount = paymentAccounts.find((a) => a.slug === paymentMethod);
 
   const placeOrder = useMutation({
     mutationFn: async (input: CheckoutInput) => {
@@ -142,7 +152,10 @@ export function CheckoutForm({
       area: String(fd.get("area") ?? ""),
       postalCode: String(fd.get("postalCode") ?? ""),
       guestEmail: isSignedIn ? "" : String(fd.get("guestEmail") ?? ""),
-      paymentMethod: "cod" as const,
+      paymentMethod,
+      paymentAccountId: selectedAccount?.id ?? "",
+      transactionId: paymentMethod === "cod" ? "" : transactionId,
+      receiptImageUrl: paymentMethod === "cod" ? "" : (receiptUrl ?? ""),
       couponCode: appliedCoupon?.code ?? "",
     };
 
@@ -329,24 +342,151 @@ export function CheckoutForm({
           {/* Payment */}
           <section className="rounded-petal border border-stone bg-white p-6">
             <h2 className="font-display text-xl text-burgundy">Payment</h2>
-            <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-lg border border-burgundy bg-burgundy/5 px-4 py-3">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="cod"
-                defaultChecked
-                className="accent-burgundy"
-              />
-              <span>
-                <span className="font-medium">Cash on delivery</span>
-                <span className="block text-sm text-ink/60">
-                  Pay the rider when your flowers arrive.
+            <div className="mt-4 space-y-2">
+              <label
+                className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 ${
+                  paymentMethod === "cod"
+                    ? "border-burgundy bg-burgundy/5"
+                    : "border-stone"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="cod"
+                  checked={paymentMethod === "cod"}
+                  onChange={() => {
+                    setPaymentMethod("cod");
+                    setTransactionId("");
+                    setReceiptUrl(null);
+                  }}
+                  className="accent-burgundy"
+                />
+                <span>
+                  <span className="font-medium">Cash on delivery</span>
+                  <span className="block text-sm text-ink/60">
+                    Pay the rider when your flowers arrive.
+                  </span>
                 </span>
-              </span>
-            </label>
-            <p className="mt-3 text-sm text-ink/50">
-              Card payments are coming soon.
-            </p>
+              </label>
+
+              {paymentAccounts.map((account) => (
+                <label
+                  key={account.id}
+                  className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 ${
+                    paymentMethod === account.slug
+                      ? "border-burgundy bg-burgundy/5"
+                      : "border-stone"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value={account.slug}
+                    checked={paymentMethod === account.slug}
+                    onChange={() => setPaymentMethod(account.slug)}
+                    className="mt-1 accent-burgundy"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2 font-medium">
+                      <PaymentMethodIcon
+                        iconKey={account.iconKey}
+                        className="size-7"
+                      />
+                      {account.name}
+                    </span>
+                    <span className="mt-1 block text-sm text-ink/60">
+                      Manual transfer — verified by our team before we prepare
+                      your order.
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            {selectedAccount && (
+              <div className="mt-5 space-y-4 rounded-lg border border-stone bg-ivory/80 p-4">
+                <p className="text-sm font-medium text-burgundy">
+                  Transfer to this account, then upload your receipt
+                </p>
+                <dl className="space-y-2 text-sm">
+                  <div>
+                    <dt className="text-ink/50">Account title</dt>
+                    <dd className="font-medium">{selectedAccount.accountTitle}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-ink/50">Account / IBAN</dt>
+                    <dd className="font-mono">{selectedAccount.accountNumber}</dd>
+                  </div>
+                  {selectedAccount.instructions && (
+                    <div>
+                      <dt className="text-ink/50">Notes</dt>
+                      <dd className="whitespace-pre-line text-ink/75">
+                        {selectedAccount.instructions}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+                <div>
+                  <Label htmlFor="transactionId">Transaction ID (TID)</Label>
+                  <Input
+                    id="transactionId"
+                    value={transactionId}
+                    onChange={(e) => setTransactionId(e.target.value)}
+                    placeholder="e.g. 1234567890"
+                    required
+                  />
+                  <FieldError message={errors.transactionId} />
+                </div>
+                <div>
+                  <Label htmlFor="receipt">Payment receipt screenshot</Label>
+                  <input
+                    id="receipt"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="mt-1.5 block w-full text-sm"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadBusy(true);
+                      setUploadError(null);
+                      try {
+                        const fd = new FormData();
+                        fd.set("file", file);
+                        fd.set("folder", "receipts");
+                        const res = await fetch("/api/uploads", {
+                          method: "POST",
+                          body: fd,
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                          throw new Error(data.error ?? "Upload failed");
+                        }
+                        setReceiptUrl(data.url as string);
+                      } catch (err) {
+                        setReceiptUrl(null);
+                        setUploadError(
+                          err instanceof Error
+                            ? err.message
+                            : "Upload failed",
+                        );
+                      } finally {
+                        setUploadBusy(false);
+                      }
+                    }}
+                  />
+                  {uploadBusy && (
+                    <p className="mt-1 text-sm text-ink/60">Uploading…</p>
+                  )}
+                  {receiptUrl && (
+                    <p className="mt-1 text-sm text-sage">Receipt attached.</p>
+                  )}
+                  <FieldError
+                    message={uploadError ?? errors.receiptImageUrl}
+                  />
+                </div>
+              </div>
+            )}
           </section>
         </div>
 

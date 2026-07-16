@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getAdminOrder } from "@/lib/repositories/admin/orders";
 import { formatPrice } from "@/lib/money";
 import { StatusUpdater } from "./status-updater";
+import { PaymentVerificationPanel } from "./payment-verification";
 
 export const metadata = { title: "Order · Admin" };
 
@@ -162,9 +163,9 @@ export default async function AdminOrderDetailPage({
               <div>
                 <dt className="text-ink/50">Method</dt>
                 <dd className="mt-0.5">
-                  {order.paymentMethod === "COD"
+                  {order.paymentMethod === "cod"
                     ? "Cash on delivery"
-                    : order.paymentMethod}
+                    : (order.paymentAccount?.name ?? order.paymentMethod)}
                 </dd>
               </div>
               <div>
@@ -175,6 +176,14 @@ export default async function AdminOrderDetailPage({
               </div>
             </dl>
           </section>
+
+          <PaymentVerificationPanel
+            orderId={order.id}
+            status={order.paymentVerificationStatus}
+            transactionId={order.transactionId}
+            receiptImageUrl={order.receiptImageUrl}
+            accountName={order.paymentAccount?.name ?? null}
+          />
         </aside>
       </div>
     </div>

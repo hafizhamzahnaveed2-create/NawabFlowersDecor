@@ -12,7 +12,7 @@ export async function Header() {
         <Link href="/" className="shrink-0">
           <span className="font-display text-2xl text-burgundy">Nawab</span>
           <span className="ml-1.5 text-sm uppercase tracking-[0.2em] text-sage">
-            Flowers Decorr
+            Flowers Decor
           </span>
         </Link>
 

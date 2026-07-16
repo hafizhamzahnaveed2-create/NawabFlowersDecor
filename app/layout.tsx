@@ -15,8 +15,8 @@ const karla = Karla({
 
 export const metadata: Metadata = {
   title: {
-    default: "Nawab Flowers Decorr",
-    template: "%s · Nawab Flowers Decorr",
+    default: "Nawab Flowers Decor",
+    template: "%s · Nawab Flowers Decor",
   },
   description:
     "Fresh flowers, hand-tied bouquets, and build-your-own arrangements — delivered on time, every time.",

@@ -1,18 +1,46 @@
 import Link from "next/link";
 import { NewsletterForm } from "@/components/storefront/newsletter-form";
+import { PaymentMethodsFooter } from "@/components/storefront/payment-methods-footer";
+import { SocialPlatformIcon } from "@/components/storefront/brand-icons";
+import {
+  listPaymentAccounts,
+  listSocialLinks,
+} from "@/lib/repositories/settings";
 
-export function Footer() {
+export async function Footer() {
+  const [socials, payments] = await Promise.all([
+    listSocialLinks(true),
+    listPaymentAccounts(true),
+  ]);
+
   return (
     <footer className="mt-16 border-t border-stone bg-white">
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <p className="font-display text-xl text-burgundy">
-            Nawab Flowers Decorr
+            Nawab Flowers Decor
           </p>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink/60">
             Fresh stems, hand-tied bouquets, and build-your-own arrangements —
             delivered on time, every time.
           </p>
+          {socials.length > 0 && (
+            <ul className="mt-4 flex flex-wrap gap-3">
+              {socials.map((s) => (
+                <li key={s.id}>
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex size-9 items-center justify-center rounded-full border border-stone text-ink/70 transition-colors hover:border-sage hover:text-burgundy"
+                    aria-label={s.platform}
+                  >
+                    <SocialPlatformIcon platform={s.platform} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sage">
@@ -83,6 +111,9 @@ export function Footer() {
               </Link>
             </li>
           </ul>
+          <div className="mt-6">
+            <PaymentMethodsFooter accounts={payments} />
+          </div>
         </div>
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sage">
@@ -95,7 +126,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-stone py-4 text-center text-xs text-ink/50">
-        © {new Date().getFullYear()} Nawab Flowers Decorr
+        © {new Date().getFullYear()} Nawab Flowers Decor
       </div>
     </footer>
   );

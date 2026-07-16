@@ -13,11 +13,25 @@ function createClient() {
   return new PrismaClient({ adapter });
 }
 
-// Reuse a single client across hot reloads in development.
+// Reuse a single client across hot reloads in development — but drop a
+// stale singleton if it was created before prisma generate added models
+// (e.g. wishlistItem / storeEvent). Otherwise those delegates stay undefined.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-export const prisma = globalForPrisma.prisma ?? createClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+function getClient() {
+  const cached = globalForPrisma.prisma;
+  if (
+    cached &&
+    typeof (cached as { wishlistItem?: unknown }).wishlistItem !== "undefined" &&
+    typeof (cached as { storeEvent?: unknown }).storeEvent !== "undefined"
+  ) {
+    return cached;
+  }
+  const client = createClient();
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = client;
+  }
+  return client;
 }
+
+export const prisma = getClient();

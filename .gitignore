@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# local upload stub (when BLOB_READ_WRITE_TOKEN is unset)
+/public/uploads/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

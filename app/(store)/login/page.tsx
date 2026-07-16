@@ -9,7 +9,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <h1 className="font-display text-3xl text-burgundy">Sign in</h1>
         <p className="mt-2 text-ink/70">
-          Welcome back to Nawab Flowers Decorr.
+          Welcome back to Nawab Flowers Decor.
         </p>
         <Suspense>
           <LoginForm />
