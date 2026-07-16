@@ -49,12 +49,32 @@ export function Footer() {
         </div>
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sage">
-            Account
+            Help &amp; more
           </h3>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
+              <Link href="/faq" className="hover:text-burgundy">
+                FAQ
+              </Link>
+            </li>
+            <li>
+              <Link href="/blog" className="hover:text-burgundy">
+                Journal
+              </Link>
+            </li>
+            <li>
+              <Link href="/policies/shipping" className="hover:text-burgundy">
+                Shipping
+              </Link>
+            </li>
+            <li>
+              <Link href="/policies/returns" className="hover:text-burgundy">
+                Returns
+              </Link>
+            </li>
+            <li>
               <Link href="/account" className="hover:text-burgundy">
-                My orders
+                My account
               </Link>
             </li>
             <li>

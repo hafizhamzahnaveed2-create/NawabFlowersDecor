@@ -107,6 +107,8 @@ type SeedProduct = {
   subCategorySlug: string;
   price: number;
   salePrice?: number;
+  /** Days from now until sale ends (sets saleEndsAt for countdown UI). */
+  saleEndsInDays?: number;
   stock: number;
   isBestSeller?: boolean;
   isNewArrival?: boolean;
@@ -162,6 +164,7 @@ const PRODUCTS: SeedProduct[] = [
     subCategorySlug: "congratulations-bouquets",
     price: 3800,
     salePrice: 3200,
+    saleEndsInDays: 5,
     stock: 20,
     isNewArrival: true,
     images: ["photo-1490750967868-88aa4486c946", "photo-1494972308805-463bc619d34e"],
@@ -201,6 +204,7 @@ const PRODUCTS: SeedProduct[] = [
     subCategorySlug: "birthday-bouquets",
     price: 4200,
     salePrice: 3500,
+    saleEndsInDays: 3,
     stock: 15,
     isNewArrival: true,
     images: ["photo-1487530811176-3780de880c2d", "photo-1508610048659-a06b669e3321"],
@@ -254,6 +258,7 @@ const PRODUCTS: SeedProduct[] = [
     subCategorySlug: "anniversary-bouquets",
     price: 6800,
     salePrice: 5900,
+    saleEndsInDays: 7,
     stock: 8,
     images: ["photo-1453747063559-36695c8771bd", "photo-1520763185298-1b434c919102"],
     tags: [["OCCASION", "Anniversary"], ["FLOWER_TYPE", "Mixed"], ["COLOR", "Purple"], ["SEASON", "Winter"]],
@@ -538,6 +543,9 @@ async function main() {
       description: p.description,
       price: p.price,
       salePrice: p.salePrice ?? null,
+      saleEndsAt: p.saleEndsInDays
+        ? new Date(Date.now() + p.saleEndsInDays * 24 * 60 * 60 * 1000)
+        : null,
       stock: p.stock,
       isBestSeller: p.isBestSeller ?? false,
       isNewArrival: p.isNewArrival ?? false,
@@ -737,6 +745,118 @@ async function main() {
     });
   }
   console.log(`Seeded ${contentBlocks.length} content blocks.`);
+
+  // Phase 6 CMS samples (upsert — shopkeeper edits survive re-seed)
+  const cmsExtras = [
+    {
+      key: "popup.main",
+      kind: "BANNER" as const,
+      title: "10% off your first order",
+      body: "Use code WELCOME10 at checkout (min Rs 2,000).",
+      imageUrl: null as string | null,
+      linkUrl: "/category/bouquets",
+      sortOrder: 0,
+      isPublished: true,
+      data: { delayMs: 800 },
+    },
+    {
+      key: "banner.spring",
+      kind: "BANNER" as const,
+      title: "Spring stems, ready to arrange",
+      body: "Fresh greenery and wrapping for Build-Your-Own.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1200&q=80",
+      linkUrl: "/category/raw-materials",
+      sortOrder: 1,
+      isPublished: true,
+      data: null,
+    },
+    {
+      key: "faq.delivery",
+      kind: "FAQ" as const,
+      title: "When will my flowers arrive?",
+      body: "We prepare same-day and deliver next-day across Lahore in your chosen time slot. You’ll pick the slot at checkout.",
+      imageUrl: null,
+      linkUrl: null,
+      sortOrder: 0,
+      isPublished: true,
+      data: null,
+    },
+    {
+      key: "faq.freshness",
+      kind: "FAQ" as const,
+      title: "How fresh are the stems?",
+      body: "We source daily and hydrate stems before arranging. Bouquets are made to order for your delivery date — never sitting on a shelf overnight.",
+      imageUrl: null,
+      linkUrl: null,
+      sortOrder: 1,
+      isPublished: true,
+      data: null,
+    },
+    {
+      key: "faq.builder",
+      kind: "FAQ" as const,
+      title: "How does Build-Your-Own work?",
+      body: "Pick stems, greenery, wrap, ribbon, and a vase or box. The live preview updates as you go. Add it to cart like any bouquet.",
+      imageUrl: null,
+      linkUrl: null,
+      sortOrder: 2,
+      isPublished: true,
+      data: null,
+    },
+    {
+      key: "policy.shipping",
+      kind: "POLICY" as const,
+      title: "Shipping & delivery",
+      body: "We deliver across Lahore on the date and time slot you choose at checkout.\n\nSame-day preparation is standard; next-day delivery is our usual window. For urgent same-day delivery, message us when placing the order.\n\nSomeone should be available to receive the flowers — blooms don’t wait well on a doorstep in the heat.",
+      imageUrl: null,
+      linkUrl: null,
+      sortOrder: 0,
+      isPublished: true,
+      data: null,
+    },
+    {
+      key: "policy.returns",
+      kind: "POLICY" as const,
+      title: "Returns & freshness guarantee",
+      body: "If stems arrive wilted or damaged, send us a photo within 24 hours and we’ll replace or refund.\n\nCustom Build-Your-Own bouquets and perishable add-ons can’t be returned once delivered in good condition.\n\nCancelled orders before preparation starts are fully refundable.",
+      imageUrl: null,
+      linkUrl: null,
+      sortOrder: 1,
+      isPublished: true,
+      data: null,
+    },
+    {
+      key: "blog.care-tips",
+      kind: "SECTION" as const,
+      title: "Keep your bouquet fresh for a week",
+      body: "Trim stems on a diagonal under running water. Change the water every two days. Keep away from fruit bowls and direct afternoon sun.\n\nIf petals brown at the edges, pinch them off — the rest of the bloom will last longer.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=1000&q=80",
+      linkUrl: null,
+      sortOrder: 0,
+      isPublished: true,
+      data: { excerpt: "A few quiet habits that stretch the life of a hand-tied bouquet." },
+    },
+  ];
+  for (const block of cmsExtras) {
+    await prisma.contentBlock.upsert({
+      where: { key: block.key },
+      update: {},
+      create: {
+        key: block.key,
+        kind: block.kind,
+        title: block.title,
+        body: block.body,
+        imageUrl: block.imageUrl,
+        linkUrl: block.linkUrl,
+        sortOrder: block.sortOrder,
+        isPublished: block.isPublished,
+        data: block.data ?? undefined,
+      },
+    });
+  }
+  console.log(`Seeded ${cmsExtras.length} Phase 6 CMS blocks.`);
 
   // ---------------------------------------------------------------- Coupons
   const coupons = [

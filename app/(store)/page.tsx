@@ -2,13 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { Hero } from "@/components/storefront/hero";
 import { ProductRail } from "@/components/storefront/product-rail";
+import { PromoBanners } from "@/components/storefront/promo-banners";
+import { FlashSaleStrip } from "@/components/storefront/flash-sale-strip";
 import {
   getBestSellers,
   getNewArrivals,
   getSaleProducts,
 } from "@/lib/repositories/products";
 import { listCategories } from "@/lib/repositories/categories";
-import { getPublishedBlock } from "@/lib/repositories/content";
+import { listPublishedByKind } from "@/lib/repositories/content";
 
 export const revalidate = 300;
 
@@ -22,22 +24,36 @@ const categoryImages: Record<string, string> = {
 };
 
 export default async function HomePage() {
-  const [bestSellers, newArrivals, saleProducts, categories, heroBlock] =
-    await Promise.all([
-      getBestSellers(8),
-      getNewArrivals(8),
-      getSaleProducts(8),
-      listCategories(),
-      getPublishedBlock("home.hero"),
-    ]);
+  const [
+    bestSellers,
+    newArrivals,
+    saleProducts,
+    categories,
+    heroSlides,
+    banners,
+  ] = await Promise.all([
+    getBestSellers(8),
+    getNewArrivals(8),
+    getSaleProducts(8),
+    listCategories(),
+    listPublishedByKind("HERO_SLIDE"),
+    listPublishedByKind("BANNER"),
+  ]);
 
   return (
     <>
       <Hero
-        title={heroBlock?.title}
-        body={heroBlock?.body}
-        imageUrl={heroBlock?.imageUrl}
+        slides={heroSlides.map((s) => ({
+          title: s.title,
+          body: s.body,
+          imageUrl: s.imageUrl,
+          linkUrl: s.linkUrl,
+        }))}
       />
+
+      <FlashSaleStrip products={saleProducts} />
+
+      <PromoBanners banners={banners} />
 
       {/* Category tiles */}
       <section className="mx-auto max-w-6xl px-6 py-12">

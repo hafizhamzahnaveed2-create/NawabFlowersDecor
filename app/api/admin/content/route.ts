@@ -1,9 +1,23 @@
 import { NextResponse } from "next/server";
 import { requireStaff } from "@/lib/auth-helpers";
 import { contentBlockFormSchema } from "@/lib/validation/admin";
-import { upsertContentBlock } from "@/lib/repositories/content";
+import { cmsBlockSchema } from "@/lib/validation/cms";
+import {
+  createCmsBlock,
+  listAllBlocksForAdmin,
+  upsertContentBlock,
+} from "@/lib/repositories/content";
 import { logActivity } from "@/lib/repositories/admin/activity";
 
+export async function GET() {
+  const session = await requireStaff();
+  if (!session) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  }
+  return NextResponse.json({ blocks: await listAllBlocksForAdmin() });
+}
+
+/** Legacy fixed-key upsert (announcement / primary hero). */
 export async function PUT(request: Request) {
   const session = await requireStaff();
   if (!session) {
@@ -24,4 +38,29 @@ export async function PUT(request: Request) {
     key: parsed.data.key,
   });
   return NextResponse.json({ block });
+}
+
+/** Create a new CMS block (FAQ, banner, blog, etc.). */
+export async function POST(request: Request) {
+  const session = await requireStaff();
+  if (!session) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  }
+  const body = await request.json().catch(() => null);
+  const parsed = cmsBlockSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid input", issues: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    );
+  }
+  try {
+    const block = await createCmsBlock(parsed.data, session.user.id);
+    return NextResponse.json({ block }, { status: 201 });
+  } catch {
+    return NextResponse.json(
+      { error: "Could not create — key may already exist" },
+      { status: 409 },
+    );
+  }
 }

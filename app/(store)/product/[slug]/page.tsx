@@ -20,6 +20,7 @@ import { AddToCart } from "@/components/storefront/add-to-cart";
 import { ProductRail } from "@/components/storefront/product-rail";
 import { WishlistButton } from "@/components/storefront/wishlist-button";
 import { ProductReviews } from "@/components/storefront/product-reviews";
+import { SaleCountdown } from "@/components/storefront/sale-countdown";
 import {
   RecentlyViewedRail,
   TrackRecentlyViewed,
@@ -159,6 +160,11 @@ export default async function ProductPage({
                   isSaleActive={saleActive}
                   className="text-2xl"
                 />
+              </div>
+            )}
+            {saleActive && product.saleEndsAt && (
+              <div className="mt-3">
+                <SaleCountdown endsAt={product.saleEndsAt} />
               </div>
             )}
             {product.description && (
