@@ -25,6 +25,7 @@ import {
   RecentlyViewedRail,
   TrackRecentlyViewed,
 } from "@/components/storefront/recently-viewed";
+import { TrackProductView } from "@/components/storefront/event-tracker";
 
 export async function generateMetadata({
   params,
@@ -72,6 +73,7 @@ export default async function ProductPage({
           price: product.price,
         }}
       />
+      <TrackProductView productId={product.id} />
 
       <div className="mx-auto max-w-6xl px-6 py-10">
         <nav aria-label="Breadcrumb" className="text-sm text-ink/60">

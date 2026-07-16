@@ -76,14 +76,16 @@ Phase 5 (growth & retention: coupons, wishlist, reviews, FBT, recently
 viewed, newsletter, abandoned-cart hook, loyalty points) — **done**.
 Phase 6 (content & marketing: CMS slides/banners/FAQ/policies/blog,
 promo popup, flash-sale countdown) — **done**.
-Next: analytics & reporting, then enterprise hardening, security/CI,
-optional AI.
+Phase 7 (analytics & reporting: KPIs, funnel, retention, CSV exports,
+Neon views, lightweight event tracking) — **done**.
+Next: enterprise hardening, then security/CI, optional AI.
 
 ## Admin
 
 Sign in with the seeded admin account, then open `/admin`:
 
 - **Dashboard** — today’s deliveries, revenue, low-stock alerts
+- **Analytics** — date-range KPIs, funnel, retention, CSV exports
 - **Products** — create/edit/delete with flags, variants, sale pricing
 - **Orders** — filter, search, update status
 - **Coupons** — create and manage promo codes
@@ -97,3 +99,6 @@ Seeded promo codes: `WELCOME10` (10% off, min Rs 2000) and `FLAT500`
 
 Storefront content routes: `/faq`, `/blog`, `/policies/shipping`,
 `/policies/returns`.
+
+Analytics lives at `/admin/analytics` (staff only). CSV exports:
+`/api/admin/analytics/export?type=orders|products|newsletter`.

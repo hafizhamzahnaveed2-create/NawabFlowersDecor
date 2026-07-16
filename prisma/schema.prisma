@@ -565,3 +565,21 @@ model ActivityLog {
   @@index([entityType, entityId])
   @@index([createdAt])
 }
+
+// Lightweight storefront funnel events (page/product views, add-to-cart, CTA clicks).
+// Queried for Phase 7 analytics — not a full product-analytics suite.
+model StoreEvent {
+  id        String   @id @default(cuid())
+  kind      String // page_view | product_view | add_to_cart | cta_click | checkout_start
+  path      String?
+  productId String?
+  userId    String?
+  sessionId String?
+  meta      Json? // { label, selector } for click-map lite later
+  createdAt DateTime @default(now())
+
+  @@index([kind, createdAt])
+  @@index([path, createdAt])
+  @@index([productId, createdAt])
+  @@index([sessionId, createdAt])
+}

@@ -6,6 +6,7 @@ import { effectivePrice } from "@/lib/pricing";
 import { formatPrice } from "@/lib/money";
 import { useCart } from "@/lib/cart/store";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/components/storefront/event-tracker";
 
 export function AddToCart({ product }: { product: ProductDetail }) {
   const addProduct = useCart((s) => s.addProduct);
@@ -31,6 +32,11 @@ export function AddToCart({ product }: { product: ProductDetail }) {
       imageUrl: product.imageUrl,
       quantity,
       maxQuantity: stock,
+    });
+    trackEvent({
+      kind: "add_to_cart",
+      productId: product.id,
+      meta: { quantity, variantId: variant?.id ?? null },
     });
   }
 

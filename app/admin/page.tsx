@@ -19,10 +19,20 @@ export default async function AdminDashboard() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="font-display text-3xl text-burgundy">Good morning</h1>
-      <p className="mt-1 text-ink/60">
-        Here&apos;s what needs your attention today.
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl text-burgundy">Good morning</h1>
+          <p className="mt-1 text-ink/60">
+            Here&apos;s what needs your attention today.
+          </p>
+        </div>
+        <Link
+          href="/admin/analytics"
+          className="rounded-lg border border-stone bg-white px-4 py-2 text-sm font-medium hover:border-sage hover:text-burgundy"
+        >
+          Open analytics
+        </Link>
+      </div>
 
       {/* Today's deliveries — the first thing a florist checks */}
       <section className="mt-6 rounded-petal border border-stone bg-white p-6 shadow-bloom">

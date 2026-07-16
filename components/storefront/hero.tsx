@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   motion,
   AnimatePresence,
@@ -10,6 +10,7 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
+import { trackEvent } from "@/components/storefront/event-tracker";
 
 export type HeroSlide = {
   title: string | null;
@@ -85,12 +86,24 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href={slide.linkUrl || "/builder"}
+              onClick={() =>
+                trackEvent({
+                  kind: "cta_click",
+                  meta: { label: "hero_build_your_own" },
+                })
+              }
               className="rounded-lg bg-burgundy px-6 py-3 font-medium text-ivory transition-colors hover:bg-burgundy-deep"
             >
               Build your own
             </Link>
             <Link
               href="/category/bouquets"
+              onClick={() =>
+                trackEvent({
+                  kind: "cta_click",
+                  meta: { label: "hero_shop_bouquets" },
+                })
+              }
               className="rounded-lg border border-stone bg-white px-6 py-3 font-medium text-ink transition-colors hover:border-sage hover:text-burgundy"
             >
               Shop bouquets

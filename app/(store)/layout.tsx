@@ -4,6 +4,7 @@ import { Footer } from "@/components/storefront/footer";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { AnnouncementBar } from "@/components/storefront/announcement-bar";
 import { PromoPopup } from "@/components/storefront/promo-popup";
+import { EventTracker } from "@/components/storefront/event-tracker";
 import { getPublishedBlock } from "@/lib/repositories/content";
 
 export default async function StoreLayout({
@@ -15,6 +16,7 @@ export default async function StoreLayout({
 
   return (
     <Providers>
+      <EventTracker />
       <AnnouncementBar />
       <Header />
       <main className="flex-1">{children}</main>
