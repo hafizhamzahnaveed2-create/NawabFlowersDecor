@@ -6,10 +6,11 @@ import { persist } from "zustand/middleware";
 // Client-side cart. Prices held here are display-only; the server re-prices
 // every line from the database when the order is placed.
 export type CartLine = {
-  /** productId or productId:variantId */
   key: string;
-  productId: string;
+  kind: "product" | "custom";
+  productId: string | null;
   variantId: string | null;
+  customBouquetId: string | null;
   slug: string;
   name: string;
   variantName: string | null;
@@ -22,7 +23,17 @@ export type CartLine = {
 type CartState = {
   lines: CartLine[];
   isDrawerOpen: boolean;
-  addLine: (line: Omit<CartLine, "key">) => void;
+  addProduct: (
+    line: Omit<CartLine, "key" | "kind" | "customBouquetId"> & {
+      productId: string;
+    },
+  ) => void;
+  addCustomBouquet: (line: {
+    customBouquetId: string;
+    name: string;
+    unitPrice: number;
+    imageUrl: string | null;
+  }) => void;
   removeLine: (key: string) => void;
   setQuantity: (key: string, quantity: number) => void;
   clear: () => void;
@@ -30,17 +41,36 @@ type CartState = {
   closeDrawer: () => void;
 };
 
+function normalizeLine(raw: CartLine & { productId?: string | null }): CartLine {
+  // Migrate Phase-2 persisted lines that lack `kind`.
+  if (!raw.kind) {
+    return {
+      ...raw,
+      kind: "product",
+      productId: raw.productId ?? "",
+      customBouquetId: null,
+    };
+  }
+  return raw;
+}
+
 export const useCart = create<CartState>()(
   persist(
     (set) => ({
       lines: [],
       isDrawerOpen: false,
-      addLine: (line) =>
+      addProduct: (line) =>
         set((state) => {
           const key = line.variantId
             ? `${line.productId}:${line.variantId}`
             : line.productId;
           const existing = state.lines.find((l) => l.key === key);
+          const next: CartLine = {
+            ...line,
+            key,
+            kind: "product",
+            customBouquetId: null,
+          };
           const lines = existing
             ? state.lines.map((l) =>
                 l.key === key
@@ -53,7 +83,30 @@ export const useCart = create<CartState>()(
                     }
                   : l,
               )
-            : [...state.lines, { ...line, key }];
+            : [...state.lines, next];
+          return { lines, isDrawerOpen: true };
+        }),
+      addCustomBouquet: (line) =>
+        set((state) => {
+          const key = `custom:${line.customBouquetId}`;
+          // Each custom design is its own line (never merge).
+          const next: CartLine = {
+            key,
+            kind: "custom",
+            productId: null,
+            variantId: null,
+            customBouquetId: line.customBouquetId,
+            slug: "custom-bouquet",
+            name: line.name || "Custom bouquet",
+            variantName: "Build-your-own",
+            unitPrice: line.unitPrice,
+            imageUrl: line.imageUrl,
+            quantity: 1,
+            maxQuantity: 1,
+          };
+          const lines = state.lines.some((l) => l.key === key)
+            ? state.lines
+            : [...state.lines, next];
           return { lines, isDrawerOpen: true };
         }),
       removeLine: (key) =>
@@ -65,7 +118,10 @@ export const useCart = create<CartState>()(
               ? state.lines.filter((l) => l.key !== key)
               : state.lines.map((l) =>
                   l.key === key
-                    ? { ...l, quantity: Math.min(quantity, l.maxQuantity) }
+                    ? {
+                        ...l,
+                        quantity: Math.min(quantity, l.maxQuantity),
+                      }
                     : l,
                 ),
         })),
@@ -76,6 +132,14 @@ export const useCart = create<CartState>()(
     {
       name: "nawab-cart",
       partialize: (state) => ({ lines: state.lines }),
+      merge: (persisted, current) => {
+        const p = persisted as { lines?: CartLine[] } | undefined;
+        return {
+          ...current,
+          ...(p ?? {}),
+          lines: (p?.lines ?? []).map(normalizeLine),
+        };
+      },
     },
   ),
 );

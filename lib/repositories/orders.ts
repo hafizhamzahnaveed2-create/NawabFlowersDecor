@@ -25,16 +25,13 @@ function generateOrderNumber(): string {
 
 /**
  * Creates an order from client cart input. The client's prices are never
- * trusted: every line is re-priced from the database, stock is checked and
- * decremented atomically inside a transaction.
+ * trusted: catalog lines are re-priced from products; custom bouquets use
+ * the snapshotted CustomBouquet total. Stock is decremented atomically.
  */
 export async function createOrder(
   input: CheckoutInput,
   userId: string | null,
 ) {
-  // Validate on the calendar-date string (ISO strings compare correctly),
-  // then store as UTC midnight: the column is @db.Date and keeps the UTC
-  // date portion — local-time parsing would shift the date back a day.
   if (
     input.deliveryDate < toDateInputValue(earliestDeliveryDate()) ||
     input.deliveryDate > toDateInputValue(latestDeliveryDate())
@@ -48,16 +45,84 @@ export async function createOrder(
     throw new CheckoutError("Email is required for guest checkout");
   }
 
-  const productIds = [...new Set(input.items.map((i) => i.productId))];
-  const products = await prisma.product.findMany({
-    where: { id: { in: productIds }, isActive: true },
-    include: { variants: true },
-  });
-  const productById = new Map(products.map((p) => [p.id, p]));
+  const productIds = [
+    ...new Set(
+      input.items
+        .map((i) => i.productId)
+        .filter((id): id is string => !!id),
+    ),
+  ];
+  const customIds = [
+    ...new Set(
+      input.items
+        .map((i) => i.customBouquetId)
+        .filter((id): id is string => !!id),
+    ),
+  ];
 
-  // Re-price and stock-check every line against the database.
-  const lines = input.items.map((item) => {
-    const product = productById.get(item.productId);
+  const [products, customBouquets] = await Promise.all([
+    productIds.length
+      ? prisma.product.findMany({
+          where: { id: { in: productIds }, isActive: true },
+          include: { variants: true },
+        })
+      : Promise.resolve([]),
+    customIds.length
+      ? prisma.customBouquet.findMany({
+          where: { id: { in: customIds } },
+          include: { items: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  const productById = new Map(products.map((p) => [p.id, p]));
+  const customById = new Map(customBouquets.map((c) => [c.id, c]));
+
+  type OrderLine = {
+    productId: string | null;
+    variantId: string | null;
+    customBouquetId: string | null;
+    nameSnapshot: string;
+    unitPrice: number;
+    quantity: number;
+    lineTotal: number;
+    /** For stock decrement of builder components */
+    componentDecrements?: { componentId: string; quantity: number }[];
+  };
+
+  const lines: OrderLine[] = input.items.map((item) => {
+    if (item.customBouquetId) {
+      const bouquet = customById.get(item.customBouquetId);
+      if (!bouquet) {
+        throw new CheckoutError(
+          "A custom bouquet in your cart is no longer available",
+        );
+      }
+      // Custom designs are sold as a single unit; quantity must be 1.
+      if (item.quantity !== 1) {
+        throw new CheckoutError("Custom bouquets can only be ordered once each");
+      }
+      const unitPrice = Number(bouquet.totalPrice);
+      const label = bouquet.name
+        ? `Custom bouquet — ${bouquet.name}`
+        : "Custom bouquet";
+      return {
+        productId: null,
+        variantId: null,
+        customBouquetId: bouquet.id,
+        nameSnapshot: label,
+        unitPrice,
+        quantity: 1,
+        lineTotal: unitPrice,
+        componentDecrements: bouquet.items
+          .filter((i) => i.componentId)
+          .map((i) => ({
+            componentId: i.componentId!,
+            quantity: i.quantity,
+          })),
+      };
+    }
+
+    const product = productById.get(item.productId!);
     if (!product) {
       throw new CheckoutError("An item in your cart is no longer available");
     }
@@ -79,6 +144,7 @@ export async function createOrder(
       return {
         productId: product.id,
         variantId: variant.id,
+        customBouquetId: null,
         nameSnapshot: `${product.name} — ${variant.name}`,
         unitPrice,
         quantity: item.quantity,
@@ -99,6 +165,7 @@ export async function createOrder(
     return {
       productId: product.id,
       variantId: null,
+      customBouquetId: null,
       nameSnapshot: product.name,
       unitPrice,
       quantity: item.quantity,
@@ -110,8 +177,36 @@ export async function createOrder(
   const total = subtotal + DELIVERY_FEE;
 
   return prisma.$transaction(async (tx) => {
-    // Decrement stock with guards so two simultaneous checkouts can't oversell.
     for (const line of lines) {
+      if (line.customBouquetId && line.componentDecrements) {
+        for (const dec of line.componentDecrements) {
+          const updated = await tx.bouquetComponent.updateMany({
+            where: { id: dec.componentId, stock: { gte: dec.quantity } },
+            data: { stock: { decrement: dec.quantity } },
+          });
+          if (updated.count === 0) {
+            throw new CheckoutError(
+              `A component in “${line.nameSnapshot}” just sold out — please rebuild it`,
+            );
+          }
+          // Keep linked raw-material product stock in sync when present.
+          const component = await tx.bouquetComponent.findUnique({
+            where: { id: dec.componentId },
+            select: { productId: true },
+          });
+          if (component?.productId) {
+            await tx.product.updateMany({
+              where: {
+                id: component.productId,
+                stock: { gte: dec.quantity },
+              },
+              data: { stock: { decrement: dec.quantity } },
+            });
+          }
+        }
+        continue;
+      }
+
       if (line.variantId) {
         const updated = await tx.productVariant.updateMany({
           where: { id: line.variantId, stock: { gte: line.quantity } },
@@ -122,7 +217,7 @@ export async function createOrder(
             `“${line.nameSnapshot}” just sold out — please adjust your cart`,
           );
         }
-      } else {
+      } else if (line.productId) {
         const updated = await tx.product.updateMany({
           where: { id: line.productId, stock: { gte: line.quantity } },
           data: { stock: { decrement: line.quantity } },
@@ -157,7 +252,17 @@ export async function createOrder(
         city: input.city,
         area: input.area || null,
         postalCode: input.postalCode || null,
-        items: { create: lines },
+        items: {
+          create: lines.map((line) => ({
+            productId: line.productId,
+            variantId: line.variantId,
+            customBouquetId: line.customBouquetId,
+            nameSnapshot: line.nameSnapshot,
+            unitPrice: line.unitPrice,
+            quantity: line.quantity,
+            lineTotal: line.lineTotal,
+          })),
+        },
       },
       select: { id: true, orderNumber: true, total: true, accessToken: true },
     });
@@ -210,6 +315,7 @@ export async function getOrderByNumber(
               images: { orderBy: { sortOrder: "asc" }, take: 1 },
             },
           },
+          customBouquet: { select: { previewImageUrl: true } },
         },
       },
     },
@@ -244,7 +350,10 @@ export async function getOrderByNumber(
       quantity: item.quantity,
       lineTotal: Number(item.lineTotal),
       productSlug: item.product?.slug ?? null,
-      imageUrl: item.product?.images[0]?.url ?? null,
+      imageUrl:
+        item.product?.images[0]?.url ??
+        item.customBouquet?.previewImageUrl ??
+        null,
     })),
   };
 }

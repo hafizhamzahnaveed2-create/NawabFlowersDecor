@@ -18,6 +18,14 @@ export async function Header() {
 
         <nav aria-label="Categories" className="hidden md:block">
           <ul className="flex items-center gap-6">
+            <li>
+              <Link
+                href="/builder"
+                className="text-sm font-medium text-burgundy transition-colors hover:text-burgundy-deep"
+              >
+                Build your own
+              </Link>
+            </li>
             {categories.map((category) => (
               <li key={category.id}>
                 <Link
@@ -49,6 +57,14 @@ export async function Header() {
       {/* Mobile category nav */}
       <nav aria-label="Categories" className="border-t border-stone md:hidden">
         <ul className="flex items-center gap-5 overflow-x-auto px-6 py-2.5">
+          <li className="shrink-0">
+            <Link
+              href="/builder"
+              className="text-sm font-medium text-burgundy hover:text-burgundy-deep"
+            >
+              Build your own
+            </Link>
+          </li>
           {categories.map((category) => (
             <li key={category.id} className="shrink-0">
               <Link

@@ -71,7 +71,8 @@ Type: Fraunces (display) + Karla (body). Motion is restrained and physical;
 Phase 1 (foundation) — **done**.
 Phase 2 (MVP storefront) — **done**.
 Phase 3 (admin MVP: products, orders, homepage content) — **done**.
-Next: Phase 4 (bouquet builder), then growth, full CMS, analytics, hardening,
+Phase 4 (Build-Your-Own Bouquet) — **done**.
+Next: Phase 5 (growth & retention), then full CMS, analytics, hardening,
 security/CI, optional AI.
 
 ## Admin
@@ -82,3 +83,6 @@ Sign in with the seeded admin account, then open `/admin`:
 - **Products** — create/edit/delete with flags, variants, sale pricing
 - **Orders** — filter, search, update status
 - **Content** — edit homepage hero and announcement bar (no deploy needed)
+- **Builder** — manage stems/greenery/wrap/ribbon/vase options for Build-Your-Own
+
+Customer Build-Your-Own lives at `/builder` (live preview + pricing → cart).

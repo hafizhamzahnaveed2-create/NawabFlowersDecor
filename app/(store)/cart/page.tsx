@@ -58,12 +58,16 @@ export default function CartPage() {
                   )}
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <Link
-                    href={`/product/${line.slug}`}
-                    className="font-medium hover:text-burgundy"
-                  >
-                    {line.name}
-                  </Link>
+                  {line.kind === "custom" ? (
+                    <span className="font-medium">{line.name}</span>
+                  ) : (
+                    <Link
+                      href={`/product/${line.slug}`}
+                      className="font-medium hover:text-burgundy"
+                    >
+                      {line.name}
+                    </Link>
+                  )}
                   {line.variantName && (
                     <p className="text-sm text-ink/60">{line.variantName}</p>
                   )}
@@ -71,6 +75,15 @@ export default function CartPage() {
                     {formatPrice(line.unitPrice)} each
                   </p>
                   <div className="mt-auto flex items-center justify-between">
+                    {line.kind === "custom" ? (
+                      <button
+                        type="button"
+                        className="text-sm text-ink/50 hover:text-burgundy"
+                        onClick={() => removeLine(line.key)}
+                      >
+                        Remove
+                      </button>
+                    ) : (
                     <div className="flex items-center rounded-lg border border-stone">
                       <button
                         type="button"
@@ -93,6 +106,7 @@ export default function CartPage() {
                         +
                       </button>
                     </div>
+                    )}
                     <span className="font-semibold">
                       {formatPrice(line.unitPrice * line.quantity)}
                     </span>

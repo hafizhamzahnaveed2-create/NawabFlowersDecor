@@ -79,17 +79,26 @@ export function CartDrawer() {
                         )}
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col">
-                        <Link
-                          href={`/product/${line.slug}`}
-                          onClick={closeDrawer}
-                          className="truncate font-medium hover:text-burgundy"
-                        >
-                          {line.name}
-                        </Link>
+                        {line.kind === "custom" ? (
+                          <span className="truncate font-medium">
+                            {line.name}
+                          </span>
+                        ) : (
+                          <Link
+                            href={`/product/${line.slug}`}
+                            onClick={closeDrawer}
+                            className="truncate font-medium hover:text-burgundy"
+                          >
+                            {line.name}
+                          </Link>
+                        )}
                         {line.variantName && (
                           <p className="text-sm text-ink/60">{line.variantName}</p>
                         )}
                         <div className="mt-auto flex items-center justify-between">
+                          {line.kind === "custom" ? (
+                            <span className="text-sm text-ink/60">Qty 1</span>
+                          ) : (
                           <div className="flex items-center rounded-lg border border-stone">
                             <button
                               type="button"
@@ -112,6 +121,7 @@ export function CartDrawer() {
                               +
                             </button>
                           </div>
+                          )}
                           <span className="font-medium">
                             {formatPrice(line.unitPrice * line.quantity)}
                           </span>

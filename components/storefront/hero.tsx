@@ -55,16 +55,16 @@ export function Hero({
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              href="/category/bouquets"
+              href="/builder"
               className="rounded-lg bg-burgundy px-6 py-3 font-medium text-ivory transition-colors hover:bg-burgundy-deep"
             >
-              Shop bouquets
+              Build your own
             </Link>
             <Link
-              href="/category/raw-materials"
+              href="/category/bouquets"
               className="rounded-lg border border-stone bg-white px-6 py-3 font-medium text-ink transition-colors hover:border-sage hover:text-burgundy"
             >
-              Shop stems
+              Shop bouquets
             </Link>
           </div>
         </div>

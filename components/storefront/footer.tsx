@@ -19,6 +19,11 @@ export function Footer() {
           </h3>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
+              <Link href="/builder" className="hover:text-burgundy">
+                Build your own
+              </Link>
+            </li>
+            <li>
               <Link href="/category/bouquets" className="hover:text-burgundy">
                 Bouquets
               </Link>

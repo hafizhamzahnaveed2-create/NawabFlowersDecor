@@ -1,11 +1,18 @@
 import { z } from "zod";
 import { DELIVERY_TIME_SLOTS } from "@/lib/delivery";
 
-export const checkoutItemSchema = z.object({
-  productId: z.string().min(1),
-  variantId: z.string().min(1).nullable().optional(),
-  quantity: z.number().int().min(1).max(99),
-});
+// A cart line is either a catalog product or a previously saved custom bouquet.
+export const checkoutItemSchema = z
+  .object({
+    productId: z.string().min(1).nullable().optional(),
+    variantId: z.string().min(1).nullable().optional(),
+    customBouquetId: z.string().min(1).nullable().optional(),
+    quantity: z.number().int().min(1).max(99),
+  })
+  .refine(
+    (item) => !!item.productId || !!item.customBouquetId,
+    "Each cart item must be a product or a custom bouquet",
+  );
 
 export const checkoutSchema = z.object({
   items: z.array(checkoutItemSchema).min(1, "Your cart is empty"),
@@ -29,7 +36,6 @@ export const checkoutSchema = z.object({
   area: z.string().trim().max(100).optional().or(z.literal("")),
   postalCode: z.string().trim().max(20).optional().or(z.literal("")),
 
-  // Required for guests; ignored for signed-in customers.
   guestEmail: z
     .string()
     .trim()
@@ -38,7 +44,7 @@ export const checkoutSchema = z.object({
     .optional()
     .or(z.literal("")),
 
-  paymentMethod: z.literal("cod"), // Stripe joins later behind the same seam
+  paymentMethod: z.literal("cod"),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;

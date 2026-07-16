@@ -4,7 +4,7 @@ import type { Prisma } from "@/lib/generated/prisma/client";
 type Tx = Prisma.TransactionClient;
 
 export async function logActivity(
-  userId: string,
+  userId: string | null,
   action: string,
   entityType: string,
   entityId: string | null,

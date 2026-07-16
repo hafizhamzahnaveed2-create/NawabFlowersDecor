@@ -587,6 +587,126 @@ async function main() {
   }
   console.log(`Seeded ${PRODUCTS.length} products.`);
 
+  // ---------------------------------------------------------------- Builder components
+  // Expose raw materials (and a few standalone wraps/ribbons) in the Build-
+  // Your-Own Bouquet picker. Upsert by name+kind so re-seeding is safe.
+  const builderSpecs: {
+    kind: "STEM" | "GREENERY" | "WRAP" | "RIBBON" | "VASE" | "CARD";
+    name: string;
+    productSlug?: string;
+    unitPrice?: number;
+    stock?: number;
+    imageId?: string;
+    maxQty?: number;
+    sortOrder: number;
+  }[] = [
+    { kind: "STEM", name: "Red Rose", productSlug: "red-rose-single-stem", sortOrder: 0, maxQty: 36 },
+    { kind: "STEM", name: "Pink Rose", productSlug: "pink-rose-single-stem", sortOrder: 1, maxQty: 36 },
+    { kind: "STEM", name: "White Lily", productSlug: "white-lily-single-stem", sortOrder: 2, maxQty: 12 },
+    { kind: "STEM", name: "Tulip", productSlug: "tulip-single-stem", sortOrder: 3, maxQty: 24 },
+    { kind: "GREENERY", name: "Eucalyptus", productSlug: "eucalyptus-bunch", sortOrder: 0, maxQty: 3 },
+    {
+      kind: "WRAP",
+      name: "Kraft & Ivory Wrap",
+      productSlug: "kraft-ivory-wrap-set",
+      sortOrder: 0,
+      maxQty: 1,
+    },
+    {
+      kind: "WRAP",
+      name: "Blush Tissue Wrap",
+      unitPrice: 280,
+      stock: 60,
+      imageId: "photo-1513201099705-a9746e1e201f",
+      sortOrder: 1,
+      maxQty: 1,
+    },
+    {
+      kind: "RIBBON",
+      name: "Satin Burgundy Ribbon",
+      unitPrice: 150,
+      stock: 80,
+      imageId: "photo-1513201099705-a9746e1e201f",
+      sortOrder: 0,
+      maxQty: 1,
+    },
+    {
+      kind: "RIBBON",
+      name: "Ivory Silk Ribbon",
+      unitPrice: 150,
+      stock: 80,
+      imageId: "photo-1587314168485-3236d6710814",
+      sortOrder: 1,
+      maxQty: 1,
+    },
+    { kind: "VASE", name: "Ceramic Bud Vase", productSlug: "ceramic-bud-vase", sortOrder: 0, maxQty: 1 },
+    {
+      kind: "VASE",
+      name: "Kraft Gift Box",
+      unitPrice: 600,
+      stock: 40,
+      imageId: "photo-1578500494198-246f612d3b3d",
+      sortOrder: 1,
+      maxQty: 1,
+    },
+  ];
+
+  for (const spec of builderSpecs) {
+    let productId: string | null = null;
+    let unitPrice = spec.unitPrice ?? 0;
+    let stock = spec.stock ?? 0;
+    let imageUrl: string | null = spec.imageId ? img(spec.imageId) : null;
+
+    if (spec.productSlug) {
+      const product = await prisma.product.findUnique({
+        where: { slug: spec.productSlug },
+        include: {
+          images: { orderBy: { sortOrder: "asc" }, take: 1 },
+        },
+      });
+      if (product) {
+        productId = product.id;
+        unitPrice = Number(product.price);
+        stock = product.stock;
+        imageUrl = product.images[0]?.url ?? imageUrl;
+      }
+    }
+
+    const existing = await prisma.bouquetComponent.findFirst({
+      where: { kind: spec.kind, name: spec.name },
+    });
+    if (existing) {
+      await prisma.bouquetComponent.update({
+        where: { id: existing.id },
+        data: {
+          unitPrice,
+          stock,
+          imageUrl,
+          productId,
+          maxQty: spec.maxQty ?? 50,
+          sortOrder: spec.sortOrder,
+          isActive: true,
+        },
+      });
+    } else {
+      await prisma.bouquetComponent.create({
+        data: {
+          kind: spec.kind,
+          name: spec.name,
+          unitPrice,
+          stock,
+          imageUrl,
+          productId,
+          maxQty: spec.maxQty ?? 50,
+          minQty: 0,
+          sortOrder: spec.sortOrder,
+          isActive: true,
+        },
+      });
+    }
+  }
+  console.log(`Seeded ${builderSpecs.length} builder components.`);
+
   // ---------------------------------------------------------------- Content
   // Editable homepage blocks (admin > Content). Update only creates missing
   // rows so a shopkeeper's edits survive re-seeding.
@@ -620,6 +740,7 @@ async function main() {
 
   const counts = {
     products: await prisma.product.count(),
+    builderComponents: await prisma.bouquetComponent.count(),
     categories: await prisma.category.count(),
     subCategories: await prisma.subCategory.count(),
     tags: await prisma.tag.count(),

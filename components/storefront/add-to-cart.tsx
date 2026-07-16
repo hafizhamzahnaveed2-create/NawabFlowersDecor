@@ -8,7 +8,7 @@ import { useCart } from "@/lib/cart/store";
 import { Button } from "@/components/ui/button";
 
 export function AddToCart({ product }: { product: ProductDetail }) {
-  const addLine = useCart((s) => s.addLine);
+  const addProduct = useCart((s) => s.addProduct);
   const hasVariants = product.variants.length > 0;
   const [variantId, setVariantId] = useState<string | null>(
     hasVariants ? product.variants[0].id : null,
@@ -21,7 +21,7 @@ export function AddToCart({ product }: { product: ProductDetail }) {
   const soldOut = stock <= 0;
 
   function handleAdd() {
-    addLine({
+    addProduct({
       productId: product.id,
       variantId: variant?.id ?? null,
       slug: product.slug,

@@ -84,6 +84,7 @@ export function CheckoutForm({
       items: lines.map((l) => ({
         productId: l.productId,
         variantId: l.variantId,
+        customBouquetId: l.customBouquetId,
         quantity: l.quantity,
       })),
       deliveryDate: String(fd.get("deliveryDate") ?? ""),
