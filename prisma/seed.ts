@@ -738,6 +738,34 @@ async function main() {
   }
   console.log(`Seeded ${contentBlocks.length} content blocks.`);
 
+  // ---------------------------------------------------------------- Coupons
+  const coupons = [
+    {
+      code: "WELCOME10",
+      kind: "PERCENT" as const,
+      value: 10,
+      minOrderAmount: 2000,
+      maxRedemptions: null as number | null,
+      isActive: true,
+    },
+    {
+      code: "FLAT500",
+      kind: "FIXED" as const,
+      value: 500,
+      minOrderAmount: 3000,
+      maxRedemptions: 200 as number | null,
+      isActive: true,
+    },
+  ];
+  for (const c of coupons) {
+    await prisma.coupon.upsert({
+      where: { code: c.code },
+      update: {},
+      create: c,
+    });
+  }
+  console.log(`Seeded ${coupons.length} coupons.`);
+
   const counts = {
     products: await prisma.product.count(),
     builderComponents: await prisma.bouquetComponent.count(),
@@ -747,6 +775,7 @@ async function main() {
     staffRoles: await prisma.staffRole.count(),
     permissions: await prisma.permission.count(),
     users: await prisma.user.count(),
+    coupons: await prisma.coupon.count(),
   };
   console.log("Seed complete:", counts);
 }

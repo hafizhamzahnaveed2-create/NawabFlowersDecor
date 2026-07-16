@@ -1,9 +1,15 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { listOrdersForUser } from "@/lib/repositories/orders";
+import { listWishlist } from "@/lib/repositories/wishlist";
+import { getLoyaltyPoints } from "@/lib/repositories/retention";
 import { formatPrice } from "@/lib/money";
+import { isSaleActive } from "@/lib/pricing";
 import { Badge } from "@/components/ui/badge";
+import { Price } from "@/components/storefront/price";
+import { WishlistRemoveButton } from "@/components/storefront/wishlist-remove-button";
 
 export const metadata = { title: "My account" };
 
@@ -28,7 +34,11 @@ export default async function AccountPage() {
   const session = await auth();
   if (!session?.user) redirect("/login?callbackUrl=/account");
 
-  const orders = await listOrdersForUser(session.user.id);
+  const [orders, wishlist, loyaltyPoints] = await Promise.all([
+    listOrdersForUser(session.user.id),
+    listWishlist(session.user.id),
+    getLoyaltyPoints(session.user.id),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
@@ -53,6 +63,71 @@ export default async function AccountPage() {
           </button>
         </form>
       </div>
+
+      <div className="mt-8 rounded-petal border border-stone bg-white px-5 py-4">
+        <p className="text-sm uppercase tracking-wider text-sage">
+          Loyalty points
+        </p>
+        <p className="mt-1 font-display text-3xl text-burgundy">
+          {loyaltyPoints}
+        </p>
+        <p className="mt-1 text-sm text-ink/60">
+          Earn 1 point per Rs 100 spent on completed orders.
+        </p>
+      </div>
+
+      <h2 className="mt-10 font-display text-2xl text-ink">Wishlist</h2>
+      {wishlist.length === 0 ? (
+        <p className="mt-3 text-sm text-ink/60">
+          Save bouquets you love from any product page — they&apos;ll show up
+          here.
+        </p>
+      ) : (
+        <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+          {wishlist.map((item) => {
+            const saleActive = isSaleActive(item);
+            return (
+              <li
+                key={item.id}
+                className="flex gap-3 rounded-petal border border-stone bg-white p-3"
+              >
+                <Link
+                  href={`/product/${item.slug}`}
+                  className="relative block h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-stone/40"
+                >
+                  {item.imageUrl && (
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.imageAlt ?? item.name}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                      unoptimized={!item.imageUrl.includes("images.unsplash.com")}
+                    />
+                  )}
+                </Link>
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/product/${item.slug}`}
+                    className="font-medium hover:text-burgundy"
+                  >
+                    {item.name}
+                  </Link>
+                  <div className="mt-1">
+                    <Price
+                      price={item.price}
+                      salePrice={item.salePrice}
+                      isSaleActive={saleActive}
+                      className="text-sm"
+                    />
+                  </div>
+                  <WishlistRemoveButton productId={item.productId} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       <h2 className="mt-10 font-display text-2xl text-ink">Order history</h2>
       {orders.length === 0 ? (

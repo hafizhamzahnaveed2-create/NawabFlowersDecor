@@ -31,6 +31,7 @@ model User {
   passwordHash  String?
   phone         String?
   role          UserRole  @default(CUSTOMER)
+  loyaltyPoints Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -39,6 +40,7 @@ model User {
   addresses      Address[]
   orders         Order[]
   reviews        Review[]
+  wishlistItems  WishlistItem[]
   customBouquets CustomBouquet[]
   staffProfile   StaffProfile?
   activityLogs   ActivityLog[]
@@ -238,6 +240,7 @@ model Product {
   variants         ProductVariant[]
   tags             ProductTag[]
   reviews          Review[]
+  wishlistItems    WishlistItem[]
   orderItems       OrderItem[]
   builderComponent BouquetComponent?
 
@@ -478,6 +481,46 @@ model Review {
 
   @@unique([productId, userId])
   @@index([productId, isApproved])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  isActive       Boolean   @default(true)
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+
+  @@index([isActive])
+}
+
+// Snapshot of a guest/customer cart for recovery emails. Updated whenever
+// the client syncs; marked recovered when an order is placed with that email.
+model AbandonedCart {
+  id              String    @id @default(cuid())
+  email           String
+  userId          String?
+  cartSnapshot    Json // { lines: CartLine-like[], subtotal: number }
+  lastActivityAt  DateTime  @default(now())
+  reminderSentAt  DateTime?
+  recoveredAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@unique([email])
+  @@index([lastActivityAt])
+  @@index([recoveredAt, reminderSentAt])
 }
 
 // CMS-editable storefront content: hero slides, banners, announcement bar,

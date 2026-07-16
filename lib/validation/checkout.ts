@@ -45,6 +45,14 @@ export const checkoutSchema = z.object({
     .or(z.literal("")),
 
   paymentMethod: z.literal("cod"),
+
+  couponCode: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .max(32)
+    .optional()
+    .or(z.literal("")),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;

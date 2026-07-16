@@ -10,6 +10,8 @@ const nav = [
   { href: "/admin/products", label: "Products" },
   { href: "/admin/builder", label: "Builder" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/coupons", label: "Coupons" },
+  { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/content", label: "Content" },
 ];
 

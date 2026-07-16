@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { NewsletterForm } from "@/components/storefront/newsletter-form";
 
 export function Footer() {
   return (
     <footer className="mt-16 border-t border-stone bg-white">
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 sm:grid-cols-3">
+      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <p className="font-display text-xl text-burgundy">
             Nawab Flowers Decorr
@@ -29,12 +30,18 @@ export function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/category/raw-materials" className="hover:text-burgundy">
+              <Link
+                href="/category/raw-materials"
+                className="hover:text-burgundy"
+              >
                 Raw Materials
               </Link>
             </li>
             <li>
-              <Link href="/category/gift-addons" className="hover:text-burgundy">
+              <Link
+                href="/category/gift-addons"
+                className="hover:text-burgundy"
+              >
                 Gift Add-ons
               </Link>
             </li>
@@ -56,6 +63,15 @@ export function Footer() {
               </Link>
             </li>
           </ul>
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-sage">
+            Newsletter
+          </h3>
+          <p className="mt-3 text-sm text-ink/60">
+            Occasion reminders and seasonal arrangements — no spam.
+          </p>
+          <NewsletterForm />
         </div>
       </div>
       <div className="border-t border-stone py-4 text-center text-xs text-ink/50">

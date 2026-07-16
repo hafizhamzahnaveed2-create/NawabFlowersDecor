@@ -7,6 +7,14 @@ import {
   toDateInputValue,
 } from "@/lib/delivery";
 import type { CheckoutInput } from "@/lib/validation/checkout";
+import {
+  CouponError,
+  validateCoupon,
+} from "@/lib/repositories/coupons";
+import {
+  awardLoyaltyPoints,
+  markCartRecovered,
+} from "@/lib/repositories/retention";
 
 export class CheckoutError extends Error {
   constructor(
@@ -174,9 +182,26 @@ export async function createOrder(
   });
 
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
-  const total = subtotal + DELIVERY_FEE;
 
-  return prisma.$transaction(async (tx) => {
+  let discountAmount = 0;
+  let couponId: string | null = null;
+  if (input.couponCode) {
+    try {
+      const { coupon, discount } = await validateCoupon(
+        input.couponCode,
+        subtotal,
+      );
+      discountAmount = discount;
+      couponId = coupon.id;
+    } catch (error) {
+      if (error instanceof CouponError) throw new CheckoutError(error.message);
+      throw error;
+    }
+  }
+
+  const total = Math.max(0, subtotal - discountAmount) + DELIVERY_FEE;
+
+  const order = await prisma.$transaction(async (tx) => {
     for (const line of lines) {
       if (line.customBouquetId && line.componentDecrements) {
         for (const dec of line.componentDecrements) {
@@ -189,7 +214,6 @@ export async function createOrder(
               `A component in “${line.nameSnapshot}” just sold out — please rebuild it`,
             );
           }
-          // Keep linked raw-material product stock in sync when present.
           const component = await tx.bouquetComponent.findUnique({
             where: { id: dec.componentId },
             select: { productId: true },
@@ -230,6 +254,13 @@ export async function createOrder(
       }
     }
 
+    if (couponId) {
+      await tx.coupon.update({
+        where: { id: couponId },
+        data: { redemptionCount: { increment: 1 } },
+      });
+    }
+
     return tx.order.create({
       data: {
         orderNumber: generateOrderNumber(),
@@ -239,9 +270,10 @@ export async function createOrder(
         paymentStatus: "UNPAID",
         paymentMethod: input.paymentMethod,
         subtotal,
-        discountAmount: 0,
+        discountAmount,
         deliveryFee: DELIVERY_FEE,
         total,
+        couponId,
         deliveryDate,
         deliveryTimeSlot: input.deliveryTimeSlot,
         giftMessage: input.giftMessage || null,
@@ -267,6 +299,20 @@ export async function createOrder(
       select: { id: true, orderNumber: true, total: true, accessToken: true },
     });
   });
+
+  // Post-order retention hooks (best-effort; order already committed).
+  const recoveryEmail = userId
+    ? (await prisma.user.findUnique({ where: { id: userId }, select: { email: true } }))
+        ?.email
+    : input.guestEmail || null;
+  if (recoveryEmail) {
+    await markCartRecovered(recoveryEmail).catch(() => undefined);
+  }
+  if (userId) {
+    await awardLoyaltyPoints(userId, Number(order.total)).catch(() => undefined);
+  }
+
+  return order;
 }
 
 export type OrderSummary = {

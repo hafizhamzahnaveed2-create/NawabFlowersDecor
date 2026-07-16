@@ -72,8 +72,10 @@ Phase 1 (foundation) — **done**.
 Phase 2 (MVP storefront) — **done**.
 Phase 3 (admin MVP: products, orders, homepage content) — **done**.
 Phase 4 (Build-Your-Own Bouquet) — **done**.
-Next: Phase 5 (growth & retention), then full CMS, analytics, hardening,
-security/CI, optional AI.
+Phase 5 (growth & retention: coupons, wishlist, reviews, FBT, recently
+viewed, newsletter, abandoned-cart hook, loyalty points) — **done**.
+Next: full CMS, analytics, hardening, security/CI, optional AI.
+(Gift cards deferred.)
 
 ## Admin
 
@@ -82,7 +84,11 @@ Sign in with the seeded admin account, then open `/admin`:
 - **Dashboard** — today’s deliveries, revenue, low-stock alerts
 - **Products** — create/edit/delete with flags, variants, sale pricing
 - **Orders** — filter, search, update status
+- **Coupons** — create and manage promo codes
+- **Reviews** — moderate product reviews before they go live
 - **Content** — edit homepage hero and announcement bar (no deploy needed)
 - **Builder** — manage stems/greenery/wrap/ribbon/vase options for Build-Your-Own
 
 Customer Build-Your-Own lives at `/builder` (live preview + pricing → cart).
+Seeded promo codes: `WELCOME10` (10% off, min Rs 2000) and `FLAT500`
+(Rs 500 off, min Rs 3000).
