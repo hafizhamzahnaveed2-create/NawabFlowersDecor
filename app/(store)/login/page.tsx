@@ -6,14 +6,17 @@ export const metadata = { title: "Sign in" };
 
 export default function LoginPage() {
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-sm">
-        <h1 className="font-display text-3xl text-burgundy">Sign in</h1>
-        <p className="mt-2 text-ink/70">Welcome back to {SITE_NAME}.</p>
+    <div className="flex flex-1 items-center justify-center px-6 py-14 sm:py-20">
+      <div className="surface-panel w-full max-w-md px-6 py-8 sm:px-8 sm:py-10">
+        <p className="section-eyebrow">Welcome back</p>
+        <h1 className="mt-2 font-display text-3xl text-burgundy">Sign in</h1>
+        <p className="mt-2 text-sm leading-relaxed text-ink/65">
+          Access your orders, wishlist, and loyalty at {SITE_NAME}.
+        </p>
         <Suspense>
           <LoginForm />
         </Suspense>
       </div>
-    </main>
+    </div>
   );
 }

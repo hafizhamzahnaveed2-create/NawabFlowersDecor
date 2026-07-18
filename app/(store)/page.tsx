@@ -59,10 +59,14 @@ export default async function HomePage() {
 
       <PromoBanners banners={banners} />
 
-      {/* Category tiles */}
-      <section className="mx-auto max-w-6xl px-6 py-12">
-        <h2 className="font-display text-3xl text-burgundy">Browse the shop</h2>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
+      <section className="page-section mx-auto max-w-6xl px-6">
+        <p className="section-eyebrow">Collections</p>
+        <h2 className="section-title mt-2">Browse the shop</h2>
+        <p className="mt-2 max-w-xl text-ink/60">
+          Bouquets, décor, stems, and the finishing gifts that complete every
+          arrangement.
+        </p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
           {categories.map((category) => (
             <Link
               key={category.id}

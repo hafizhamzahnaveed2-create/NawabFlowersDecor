@@ -2,7 +2,8 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { getDashboardData } from "@/lib/repositories/admin/dashboard";
 import { formatPrice } from "@/lib/money";
-import { Badge } from "@/components/ui/badge";
+import { Badge, orderStatusBadgeVariant } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { requireAnyPagePermission } from "./require-page-permission";
 
 export const metadata = { title: "Dashboard · Admin" };
@@ -30,12 +31,13 @@ export default async function AdminDashboard({
   const sp = await searchParams;
   if (sp.denied === "1") {
     return (
-      <div className="mx-auto max-w-lg rounded-petal border border-stone bg-white p-8 text-center">
-        <h1 className="font-display text-2xl text-burgundy">Access limited</h1>
-        <p className="mt-2 text-sm text-ink/70">
-          You don&apos;t have permission for that page. Use the menu on the left
-          for areas you can open, or ask an admin to update your role.
-        </p>
+      <div className="mx-auto max-w-lg">
+        <EmptyState
+          title="Access limited"
+          description="You don’t have permission for that page. Use the menu for areas you can open, or ask an admin to update your role."
+          actionHref="/admin"
+          actionLabel="Back to dashboard"
+        />
       </div>
     );
   }
@@ -107,17 +109,17 @@ export default async function AdminDashboard({
       </section>
 
       {/* Today's deliveries — the first thing a florist checks */}
-      <section className="mt-6 rounded-petal border border-stone bg-white p-6 shadow-bloom">
+      <section className="surface-panel mt-6 p-6">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-xl text-burgundy">
             Today&apos;s deliveries
           </h2>
-          <span className="rounded-full bg-blush px-3 py-1 text-sm font-semibold text-burgundy-deep">
+          <span className="rounded-full bg-blush/50 px-3 py-1 text-sm font-semibold text-burgundy-deep">
             {data.todaysDeliveries.length}
           </span>
         </div>
         {data.todaysDeliveries.length === 0 ? (
-          <p className="mt-3 text-ink/60">
+          <p className="mt-3 text-sm leading-relaxed text-ink/60">
             Nothing due today. {data.upcomingCount} deliver
             {data.upcomingCount === 1 ? "y" : "ies"} coming up this week.
           </p>
@@ -135,7 +137,9 @@ export default async function AdminDashboard({
                     {d.city}
                   </span>
                   <span className="text-sm text-ink/60">{d.orderNumber}</span>
-                  <Badge variant="muted">{statusLabels[d.status]}</Badge>
+                  <Badge variant={orderStatusBadgeVariant(d.status)}>
+                    {statusLabels[d.status]}
+                  </Badge>
                   <span className="text-sm font-semibold text-burgundy">
                     Update status →
                   </span>
@@ -148,22 +152,22 @@ export default async function AdminDashboard({
 
       {/* Stat cards */}
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-petal border border-stone bg-white p-5">
+        <div className="surface-panel p-5">
           <p className="text-sm text-ink/60">Revenue this month</p>
-          <p className="mt-1 text-2xl font-semibold text-burgundy">
+          <p className="mt-1 font-display text-2xl text-burgundy">
             {formatPrice(data.monthRevenue)}
           </p>
         </div>
-        <div className="rounded-petal border border-stone bg-white p-5">
+        <div className="surface-panel p-5">
           <p className="text-sm text-ink/60">Orders this month</p>
-          <p className="mt-1 text-2xl font-semibold">{data.monthOrders}</p>
+          <p className="mt-1 font-display text-2xl text-ink">{data.monthOrders}</p>
         </div>
         <Link
           href="/admin/orders?status=PENDING"
-          className="rounded-petal border border-stone bg-white p-5 transition-colors hover:border-burgundy/40"
+          className="surface-panel p-5 transition-[border-color,box-shadow] hover:shadow-bloom-lg"
         >
           <p className="text-sm text-ink/60">Awaiting confirmation</p>
-          <p className="mt-1 text-2xl font-semibold">{data.pendingCount}</p>
+          <p className="mt-1 font-display text-2xl text-ink">{data.pendingCount}</p>
           <p className="mt-1 text-sm font-medium text-burgundy">
             Review pending orders →
           </p>
@@ -171,8 +175,7 @@ export default async function AdminDashboard({
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        {/* Low stock */}
-        <section className="rounded-petal border border-stone bg-white p-6">
+        <section className="surface-panel p-6">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-display text-xl text-burgundy">Low stock</h2>
             <Link
@@ -213,7 +216,7 @@ export default async function AdminDashboard({
         </section>
 
         {/* Recent orders */}
-        <section className="rounded-petal border border-stone bg-white p-6">
+        <section className="surface-panel p-6">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-display text-xl text-burgundy">Recent orders</h2>
             <Link
@@ -223,27 +226,31 @@ export default async function AdminDashboard({
               All orders
             </Link>
           </div>
-          <ul className="mt-3 divide-y divide-stone">
-            {data.recentOrders.map((o) => (
-              <li key={o.id}>
-                <Link
-                  href={`/admin/orders/${o.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 py-2.5 hover:text-burgundy"
-                >
-                  <span className="text-sm">{o.orderNumber}</span>
-                  <span className="truncate text-sm text-ink/70">
-                    {o.recipientName}
-                  </span>
-                  <span className="text-sm font-medium">
-                    {formatPrice(o.total)}
-                  </span>
-                  <Badge variant={o.status === "DELIVERED" ? "new" : "muted"}>
-                    {statusLabels[o.status]}
-                  </Badge>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {data.recentOrders.length === 0 ? (
+            <p className="mt-3 text-sm text-ink/60">No orders yet.</p>
+          ) : (
+            <ul className="mt-3 divide-y divide-stone/80">
+              {data.recentOrders.map((o) => (
+                <li key={o.id}>
+                  <Link
+                    href={`/admin/orders/${o.id}`}
+                    className="flex flex-wrap items-center justify-between gap-2 py-2.5 hover:text-burgundy"
+                  >
+                    <span className="text-sm font-medium">{o.orderNumber}</span>
+                    <span className="truncate text-sm text-ink/70">
+                      {o.recipientName}
+                    </span>
+                    <span className="text-sm font-medium">
+                      {formatPrice(o.total)}
+                    </span>
+                    <Badge variant={orderStatusBadgeVariant(o.status)}>
+                      {statusLabels[o.status]}
+                    </Badge>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
     </div>

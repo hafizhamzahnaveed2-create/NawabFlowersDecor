@@ -8,14 +8,18 @@ export async function Header() {
   const categories = await listCategories();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-stone bg-ivory/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
-        <Link href="/" className="shrink-0" aria-label="Nawab Flowers Decor home">
-          <SiteLogo size={44} />
+    <header className="sticky top-0 z-30 border-b border-stone/70 bg-ivory/85 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3.5">
+        <Link
+          href="/"
+          className="shrink-0"
+          aria-label="Nawab Flowers Decor home"
+        >
+          <SiteLogo size={42} />
         </Link>
 
-        <nav aria-label="Categories" className="hidden md:block">
-          <ul className="flex items-center gap-6">
+        <nav aria-label="Categories" className="hidden lg:block">
+          <ul className="flex items-center gap-7">
             <li>
               <Link
                 href="/builder"
@@ -28,28 +32,38 @@ export async function Header() {
               <li key={category.id}>
                 <Link
                   href={`/category/${category.slug}`}
-                  className="text-sm font-medium text-ink transition-colors hover:text-burgundy"
+                  className="text-sm font-medium text-ink/85 transition-colors hover:text-burgundy"
                 >
                   {category.name}
                 </Link>
               </li>
             ))}
+            <li>
+              <Link
+                href="/contact"
+                className="text-sm font-medium text-ink/85 transition-colors hover:text-burgundy"
+              >
+                Contact
+              </Link>
+            </li>
           </ul>
         </nav>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <HeaderAuth />
           <CartButton />
         </div>
       </div>
 
-      {/* Mobile category nav */}
-      <nav aria-label="Categories" className="border-t border-stone md:hidden">
-        <ul className="flex items-center gap-5 overflow-x-auto px-6 py-2.5">
+      <nav
+        aria-label="Shop categories"
+        className="border-t border-stone/60 lg:hidden"
+      >
+        <ul className="flex items-center gap-1 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <li className="shrink-0">
             <Link
               href="/builder"
-              className="text-sm font-medium text-burgundy hover:text-burgundy-deep"
+              className="inline-flex rounded-full bg-burgundy/8 px-3 py-1.5 text-sm font-medium text-burgundy"
             >
               Build your own
             </Link>
@@ -58,12 +72,20 @@ export async function Header() {
             <li key={category.id} className="shrink-0">
               <Link
                 href={`/category/${category.slug}`}
-                className="text-sm font-medium text-ink hover:text-burgundy"
+                className="inline-flex rounded-full px-3 py-1.5 text-sm font-medium text-ink/80 hover:bg-stone/50 hover:text-burgundy"
               >
                 {category.name}
               </Link>
             </li>
           ))}
+          <li className="shrink-0">
+            <Link
+              href="/contact"
+              className="inline-flex rounded-full px-3 py-1.5 text-sm font-medium text-ink/80 hover:bg-stone/50 hover:text-burgundy"
+            >
+              Contact
+            </Link>
+          </li>
         </ul>
       </nav>
     </header>

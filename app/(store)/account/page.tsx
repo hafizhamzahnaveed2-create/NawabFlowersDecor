@@ -16,6 +16,8 @@ import { ProfileSettings } from "@/components/account/profile-settings";
 import { AccountStaffBanner } from "@/components/account/account-staff-banner";
 import { TabSessionGate } from "@/components/auth/tab-session-gate";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { orderStatusBadgeVariant } from "@/components/ui/badge";
 
 export const metadata = { title: "My account" };
 
@@ -93,21 +95,21 @@ export default async function AccountPage() {
         </div>
       )}
 
-      <h2 className="mt-10 font-display text-2xl text-ink">Wishlist</h2>
+      <h2 className="mt-10 font-display text-2xl text-burgundy">Wishlist</h2>
       {wishlist.length === 0 ? (
-        <p className="mt-3 text-sm text-ink/60">
-          Save bouquets you love from any product page — they&apos;ll show up
-          here.
-        </p>
+        <EmptyState
+          className="mt-4"
+          title="Your wishlist is empty"
+          description="Save bouquets you love from any product page — they’ll show up here."
+          actionHref="/category/bouquets"
+          actionLabel="Browse bouquets"
+        />
       ) : (
         <ul className="mt-4 grid gap-4 sm:grid-cols-2">
           {wishlist.map((item) => {
             const saleActive = isSaleActive(item);
             return (
-              <li
-                key={item.id}
-                className="flex gap-3 rounded-petal border border-stone bg-white p-3"
-              >
+              <li key={item.id} className="surface-panel flex gap-3 p-3">
                 <Link
                   href={`/product/${item.slug}`}
                   className="relative block h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-stone/40"
@@ -146,33 +148,26 @@ export default async function AccountPage() {
         </ul>
       )}
 
-      <h2 className="mt-10 font-display text-2xl text-ink">Order history</h2>
+      <h2 className="mt-10 font-display text-2xl text-burgundy">Order history</h2>
       {orders.length === 0 ? (
-        <div className="mt-4 rounded-petal border border-stone bg-white p-12 text-center">
-          <p className="font-display text-2xl text-burgundy">No orders yet</p>
-          <p className="mt-2 text-ink/60">
-            When you place an order, it will show up here.
-          </p>
-          <Link
-            href="/category/bouquets"
-            className="mt-6 inline-block rounded-lg bg-burgundy px-6 py-3 font-medium text-ivory transition-colors hover:bg-burgundy-deep"
-          >
-            Shop bouquets
-          </Link>
-        </div>
+        <EmptyState
+          className="mt-4"
+          title="No orders yet"
+          description="When you place an order, it will show up here with delivery details."
+          actionHref="/category/bouquets"
+          actionLabel="Shop bouquets"
+        />
       ) : (
         <ul className="mt-4 space-y-4">
           {orders.map((order) => (
             <li key={order.id}>
               <Link
                 href={`/order/${order.orderNumber}`}
-                className="block rounded-petal border border-stone bg-white p-5 shadow-bloom transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-bloom-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                className="surface-panel block p-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-bloom-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-semibold">{order.orderNumber}</span>
-                  <Badge
-                    variant={order.status === "DELIVERED" ? "new" : "muted"}
-                  >
+                  <Badge variant={orderStatusBadgeVariant(order.status)}>
                     {statusLabels[order.status] ?? order.status}
                   </Badge>
                 </div>

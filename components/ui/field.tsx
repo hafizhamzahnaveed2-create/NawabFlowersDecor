@@ -1,4 +1,4 @@
-// Small form primitives sharing one visual language across checkout/auth.
+// Small form primitives sharing one visual language across checkout/auth/admin.
 
 export function RequiredMark() {
   return (
@@ -15,7 +15,10 @@ export function Label({
   ...props
 }: React.LabelHTMLAttributes<HTMLLabelElement> & { required?: boolean }) {
   return (
-    <label {...props} className={`block text-sm font-medium ${className}`}>
+    <label
+      {...props}
+      className={`block text-sm font-medium text-ink/90 ${className}`}
+    >
       {children}
       {required ? <RequiredMark /> : null}
     </label>
@@ -23,30 +26,35 @@ export function Label({
 }
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className={`mt-1.5 w-full rounded-lg border border-stone bg-white px-3.5 py-2.5 placeholder:text-ink/40 ${props.className ?? ""}`}
-    />
-  );
+  const { className = "", ...rest } = props;
+  return <input {...rest} className={`control-field ${className}`} />;
 }
 
 export function Textarea(
   props: React.TextareaHTMLAttributes<HTMLTextAreaElement>,
 ) {
+  const { className = "", ...rest } = props;
+  return <textarea {...rest} className={`control-field ${className}`} />;
+}
+
+export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const { className = "", children, ...rest } = props;
   return (
-    <textarea
-      {...props}
-      className={`mt-1.5 w-full rounded-lg border border-stone bg-white px-3.5 py-2.5 placeholder:text-ink/40 ${props.className ?? ""}`}
-    />
+    <select {...rest} className={`control-field ${className}`}>
+      {children}
+    </select>
   );
 }
 
 export function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p role="alert" className="mt-1 text-sm text-burgundy">
+    <p role="alert" className="mt-1.5 text-sm text-burgundy">
       {message}
     </p>
   );
+}
+
+export function FieldHint({ children }: { children: React.ReactNode }) {
+  return <p className="mt-1.5 text-xs leading-relaxed text-ink/50">{children}</p>;
 }

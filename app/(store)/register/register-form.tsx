@@ -9,6 +9,8 @@ import {
   clearAuthTabSession,
   markAuthTabSession,
 } from "@/lib/auth-session-tab";
+import { Button } from "@/components/ui/button";
+import { FieldError, FieldHint, Input, Label } from "@/components/ui/field";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -75,62 +77,51 @@ export function RegisterForm() {
     <>
       <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
         <div>
-          <label htmlFor="name" className="block text-sm font-medium">
+          <Label htmlFor="name" required>
             Name
-          </label>
-          <input
+          </Label>
+          <Input
             id="name"
             name="name"
             type="text"
             autoComplete="name"
             required
-            className="mt-1.5 w-full rounded-lg border border-stone bg-white px-3.5 py-2.5 shadow-bloom placeholder:text-ink/40"
             placeholder="Your name"
           />
         </div>
         <div>
-          <label htmlFor="email" className="block text-sm font-medium">
+          <Label htmlFor="email" required>
             Email
-          </label>
-          <input
+          </Label>
+          <Input
             id="email"
             name="email"
             type="email"
             autoComplete="email"
             required
-            className="mt-1.5 w-full rounded-lg border border-stone bg-white px-3.5 py-2.5 shadow-bloom placeholder:text-ink/40"
             placeholder="you@example.com"
           />
         </div>
         <div>
-          <label htmlFor="password" className="block text-sm font-medium">
+          <Label htmlFor="password" required>
             Password
-          </label>
-          <input
+          </Label>
+          <Input
             id="password"
             name="password"
             type="password"
             autoComplete="new-password"
             required
             minLength={8}
-            className="mt-1.5 w-full rounded-lg border border-stone bg-white px-3.5 py-2.5 shadow-bloom"
           />
-          <p className="mt-1.5 text-xs text-ink/50">At least 8 characters.</p>
+          <FieldHint>At least 8 characters.</FieldHint>
         </div>
 
-        {error && (
-          <p role="alert" className="text-sm text-burgundy">
-            {error}
-          </p>
-        )}
+        <FieldError message={error ?? undefined} />
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-lg bg-burgundy px-4 py-2.5 font-medium text-ivory transition-colors hover:bg-burgundy-deep disabled:opacity-60"
-        >
+        <Button type="submit" disabled={submitting} className="w-full">
           {submitting ? "Creating account…" : "Create account"}
-        </button>
+        </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-ink/60">

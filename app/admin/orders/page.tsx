@@ -2,6 +2,11 @@ import Link from "next/link";
 import { listAdminOrders } from "@/lib/repositories/admin/orders";
 import { formatPrice } from "@/lib/money";
 import type { OrderStatus } from "@/lib/generated/prisma/client";
+import { Badge, orderStatusBadgeVariant } from "@/components/ui/badge";
+import { Button, buttonClasses } from "@/components/ui/button";
+import { Input } from "@/components/ui/field";
+import { EmptyState } from "@/components/ui/empty-state";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { OrderRowActions } from "./order-row-actions";
 import { requirePagePermission } from "../require-page-permission";
 
@@ -15,15 +20,6 @@ const STATUSES: { value: OrderStatus; label: string }[] = [
   { value: "DELIVERED", label: "Delivered" },
   { value: "CANCELLED", label: "Cancelled" },
 ];
-
-const statusStyles: Record<OrderStatus, string> = {
-  PENDING: "bg-amber-100 text-amber-900",
-  CONFIRMED: "bg-blush text-burgundy-deep",
-  PREPARING: "bg-sage/20 text-sage",
-  OUT_FOR_DELIVERY: "bg-sage/20 text-sage",
-  DELIVERED: "bg-sage text-ivory",
-  CANCELLED: "bg-stone text-ink/60",
-};
 
 const deliveryDateFormatter = new Intl.DateTimeFormat("en-PK", {
   weekday: "short",
@@ -54,32 +50,29 @@ export default async function AdminOrdersPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl text-burgundy">Orders</h1>
-          <p className="mt-1 text-ink/60">
-            {total === 1 ? "1 order" : `${total} orders`}
-            {status
-              ? ` · ${STATUSES.find((s) => s.value === status)?.label}`
-              : ""}{" "}
-            — open any order to confirm or change its status.
-          </p>
-        </div>
+      <AdminPageHeader
+        title="Orders"
+        description={`${total === 1 ? "1 order" : `${total} orders`}${
+          status
+            ? ` · ${STATUSES.find((s) => s.value === status)?.label}`
+            : ""
+        } — open any order to confirm or change its status.`}
+      >
         <Link
           href="/admin/orders?status=PENDING"
-          className="rounded-lg border border-burgundy/40 bg-blush/50 px-4 py-2.5 text-sm font-semibold text-burgundy-deep hover:bg-blush"
+          className={buttonClasses("secondary", "md")}
         >
           Show pending only
         </Link>
-      </div>
+      </AdminPageHeader>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center gap-2">
         <Link
           href={filterHref(undefined)}
-          className={`rounded-full px-3.5 py-1.5 text-sm ${
+          className={`rounded-full px-3.5 py-1.5 text-sm transition-colors ${
             !status
               ? "bg-burgundy text-ivory"
-              : "border border-stone bg-white hover:border-sage"
+              : "border border-stone bg-surface hover:border-sage"
           }`}
         >
           All
@@ -88,10 +81,10 @@ export default async function AdminOrdersPage({
           <Link
             key={s.value}
             href={filterHref(s.value)}
-            className={`rounded-full px-3.5 py-1.5 text-sm ${
+            className={`rounded-full px-3.5 py-1.5 text-sm transition-colors ${
               status === s.value
                 ? "bg-burgundy text-ivory"
-                : "border border-stone bg-white hover:border-sage"
+                : "border border-stone bg-surface hover:border-sage"
             }`}
           >
             {s.label}
@@ -99,25 +92,22 @@ export default async function AdminOrdersPage({
         ))}
       </div>
 
-      <form method="GET" className="mt-4 flex max-w-sm gap-2">
+      <form method="GET" className="mt-4 flex max-w-md gap-2">
         {status && <input type="hidden" name="status" value={status} />}
-        <input
+        <Input
           type="search"
           name="q"
           defaultValue={sp.q}
           placeholder="Order #, recipient, phone…"
           aria-label="Search orders"
-          className="w-full rounded-lg border border-stone bg-white px-3.5 py-2 text-sm"
+          className="mt-0"
         />
-        <button
-          type="submit"
-          className="rounded-lg border border-stone bg-white px-4 py-2 text-sm font-medium hover:border-sage"
-        >
+        <Button type="submit" variant="secondary">
           Search
-        </button>
+        </Button>
       </form>
 
-      <div className="mt-5 overflow-x-auto rounded-petal border border-stone bg-white">
+      <div className="surface-panel mt-5 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-stone text-left text-xs uppercase tracking-wider text-ink/50">
@@ -159,11 +149,9 @@ export default async function AdminOrdersPage({
                   {formatPrice(o.total)}
                 </td>
                 <td className="px-4 py-3">
-                  <span
-                    className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[o.status]}`}
-                  >
+                  <Badge variant={orderStatusBadgeVariant(o.status)}>
                     {STATUSES.find((s) => s.value === o.status)?.label}
-                  </span>
+                  </Badge>
                 </td>
                 <td className="px-4 py-3 text-right">
                   <OrderRowActions orderId={o.id} />
@@ -173,7 +161,17 @@ export default async function AdminOrdersPage({
           </tbody>
         </table>
         {orders.length === 0 && (
-          <p className="px-4 py-10 text-center text-ink/60">No orders found.</p>
+          <div className="p-4">
+            <EmptyState
+              title="No orders found"
+              description={
+                status || sp.q
+                  ? "Try another status filter or search term."
+                  : "New customer orders will appear here as soon as they checkout."
+              }
+              className="border-0 shadow-none"
+            />
+          </div>
         )}
       </div>
 

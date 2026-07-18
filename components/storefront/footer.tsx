@@ -18,8 +18,8 @@ export async function Footer() {
   ]);
 
   return (
-    <footer className="mt-16 border-t border-stone bg-white">
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className="mt-10 border-t border-stone/80 bg-gradient-to-b from-surface to-ivory">
+      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-3">
             <Image

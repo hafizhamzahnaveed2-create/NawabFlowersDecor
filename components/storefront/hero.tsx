@@ -12,6 +12,7 @@ import {
 } from "framer-motion";
 import { trackEvent } from "@/components/storefront/event-tracker";
 import { SITE_NAME } from "@/lib/brand";
+import { buttonClasses } from "@/components/ui/button";
 import { isDirectVideoUrl, youtubeEmbedUrl } from "@/lib/hero-media";
 
 export type HeroSlide = {
@@ -26,7 +27,7 @@ const DEFAULTS: HeroSlide = {
   title: "Flowers that say it before you do",
   body: "Hand-tied bouquets for every occasion, individual stems for your own arrangements, and gifts to go with them.",
   imageUrl:
-    "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=1200&q=80",
+    "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=1600&q=80",
 };
 
 function HeroMedia({ slide }: { slide: HeroSlide }) {
@@ -40,7 +41,7 @@ function HeroMedia({ slide }: { slide: HeroSlide }) {
         <iframe
           src={yt}
           title={slide.title || "Hero video"}
-          className="absolute inset-0 h-full w-full border-0"
+          className="absolute inset-0 h-full w-full scale-105 border-0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
@@ -65,13 +66,11 @@ function HeroMedia({ slide }: { slide: HeroSlide }) {
   return (
     <Image
       src={imageUrl!}
-      alt="A hand-tied bouquet"
+      alt=""
       fill
       priority
-      unoptimized={
-        !!imageUrl && !imageUrl.includes("images.unsplash.com")
-      }
-      sizes="(max-width: 1024px) 100vw, 50vw"
+      unoptimized={!!imageUrl && !imageUrl.includes("images.unsplash.com")}
+      sizes="100vw"
       className="object-cover"
     />
   );
@@ -96,7 +95,7 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
     target: ref,
     offset: ["start start", "end start"],
   });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 48]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, 60]);
 
   useEffect(() => {
     if (activeSlides.length < 2 || reducedMotion) return;
@@ -113,28 +112,53 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
   return (
     <section
       ref={ref}
-      className="relative overflow-hidden bg-gradient-to-b from-blush/25 via-ivory to-ivory"
+      className="relative isolate min-h-[78vh] overflow-hidden sm:min-h-[85vh]"
     >
-      <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-16 sm:py-20 lg:grid-cols-2">
-        <div>
-          <h1 className="font-display text-4xl leading-[1.05] text-burgundy sm:text-5xl lg:text-6xl">
-            {SITE_NAME}
-          </h1>
-          <p className="mt-3 text-sm uppercase tracking-[0.25em] text-sage">
+      <motion.div
+        style={reducedMotion ? undefined : { y }}
+        className="absolute inset-0"
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={mediaKey}
+            className="absolute inset-0"
+            initial={reducedMotion ? false : { opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={reducedMotion ? undefined : { opacity: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <HeroMedia slide={slide} />
+          </motion.div>
+        </AnimatePresence>
+        <div className="absolute inset-0 bg-gradient-to-r from-ink/72 via-ink/45 to-ink/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-ink/25" />
+      </motion.div>
+
+      <div className="relative mx-auto flex min-h-[78vh] max-w-6xl flex-col justify-end px-6 pb-14 pt-28 sm:min-h-[85vh] sm:pb-20 sm:pt-32">
+        <motion.div
+          initial={reducedMotion ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          className="max-w-xl"
+        >
+          <p className="text-xs font-medium uppercase tracking-[0.28em] text-blush">
             Fresh · Hand-tied · Delivered on time
           </p>
+          <h1 className="mt-3 font-display text-5xl leading-[0.98] text-ivory sm:text-6xl lg:text-7xl">
+            {SITE_NAME}
+          </h1>
           <AnimatePresence mode="wait">
             <motion.div
               key={index}
               initial={reducedMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={reducedMotion ? undefined : { opacity: 0, y: -8 }}
+              exit={reducedMotion ? undefined : { opacity: 0, y: -6 }}
               transition={{ duration: 0.35 }}
             >
-              <p className="mt-5 font-display text-2xl leading-snug text-ink sm:text-3xl">
+              <p className="mt-5 font-display text-2xl leading-snug text-ivory/95 sm:text-3xl">
                 {slide.title}
               </p>
-              <p className="mt-4 max-w-md text-lg leading-relaxed text-ink/75">
+              <p className="mt-3 max-w-md text-base leading-relaxed text-ivory/78 sm:text-lg">
                 {slide.body}
               </p>
             </motion.div>
@@ -148,7 +172,7 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
                   meta: { label: "hero_build_your_own" },
                 })
               }
-              className="rounded-lg bg-burgundy px-6 py-3 font-medium text-ivory transition-colors hover:bg-burgundy-deep"
+              className={buttonClasses("primary", "lg")}
             >
               Build your own
             </Link>
@@ -160,13 +184,17 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
                   meta: { label: "hero_shop_bouquets" },
                 })
               }
-              className="rounded-lg border border-stone bg-white px-6 py-3 font-medium text-ink transition-colors hover:border-sage hover:text-burgundy"
+              className="inline-flex items-center justify-center rounded-[var(--radius-control)] border border-ivory/40 bg-ivory/10 px-6 py-3 text-base font-medium text-ivory backdrop-blur-sm transition-colors hover:bg-ivory/20"
             >
               Shop bouquets
             </Link>
           </div>
           {activeSlides.length > 1 && (
-            <div className="mt-6 flex gap-2" role="tablist" aria-label="Hero slides">
+            <div
+              className="mt-8 flex gap-2"
+              role="tablist"
+              aria-label="Hero slides"
+            >
               {activeSlides.map((_, i) => (
                 <button
                   key={i}
@@ -175,30 +203,13 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
                   aria-selected={i === index}
                   aria-label={`Slide ${i + 1}`}
                   onClick={() => setIndex(i)}
-                  className={`h-1.5 w-6 rounded-full transition-colors ${
-                    i === index ? "bg-burgundy" : "bg-stone"
+                  className={`h-1.5 w-7 rounded-full transition-colors ${
+                    i === index ? "bg-ivory" : "bg-ivory/35"
                   }`}
                 />
               ))}
             </div>
           )}
-        </div>
-        <motion.div
-          style={reducedMotion ? undefined : { y }}
-          className="relative aspect-[4/5] max-h-[520px] overflow-hidden rounded-petal shadow-bloom-lg"
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mediaKey}
-              className="absolute inset-0"
-              initial={reducedMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={reducedMotion ? undefined : { opacity: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <HeroMedia slide={slide} />
-            </motion.div>
-          </AnimatePresence>
         </motion.div>
       </div>
     </section>

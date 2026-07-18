@@ -1,12 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { Providers } from "@/app/providers";
 import { TabSessionGate } from "@/components/auth/tab-session-gate";
-import { SignOutButton } from "@/components/auth/sign-out-button";
-import { SiteLogo } from "@/components/brand/site-logo";
 import { WelcomeSplash } from "@/components/welcome/welcome-splash";
-import { AdminNav } from "./admin-nav";
+import { AdminShell } from "@/components/admin/admin-shell";
 
 export const metadata = { title: "Admin" };
 
@@ -15,8 +12,6 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Middleware already gates /admin; this is defence in depth for the layout
-  // and everything under it.
   const session = await auth();
   const role = session?.user?.role;
   if (!session?.user || (role !== "ADMIN" && role !== "STAFF")) {
@@ -27,40 +22,12 @@ export default async function AdminLayout({
     <Providers>
       <TabSessionGate callbackPath="/admin">
         <WelcomeSplash greeting="Welcome to your shop admin" />
-        <div className="flex min-h-screen">
-          <aside className="flex w-60 shrink-0 flex-col bg-burgundy text-ivory">
-            <Link href="/admin" className="block px-5 py-5">
-              <SiteLogo
-                size={40}
-                nameClassName="font-display text-base leading-tight text-ivory"
-              />
-              <span className="mt-1.5 block text-xs uppercase tracking-[0.2em] text-blush">
-                Shop admin
-              </span>
-            </Link>
-            <AdminNav permissions={session.user.permissions} />
-            <div className="border-t border-ivory/15 px-5 py-4">
-              <p className="truncate text-xs text-ivory/70">{session.user.email}</p>
-              <div className="mt-2 flex flex-col gap-1.5 text-sm">
-                <Link
-                  href="/account"
-                  className="text-blush hover:text-ivory"
-                >
-                  Profile settings
-                </Link>
-                <div className="flex items-center gap-3">
-                  <Link href="/" className="text-blush hover:text-ivory">
-                    View shop
-                  </Link>
-                  <SignOutButton className="text-blush hover:text-ivory" />
-                </div>
-              </div>
-            </div>
-          </aside>
-          <main className="min-w-0 flex-1 bg-ivory px-6 py-8 sm:px-8">
-            {children}
-          </main>
-        </div>
+        <AdminShell
+          email={session.user.email ?? ""}
+          permissions={session.user.permissions ?? []}
+        >
+          {children}
+        </AdminShell>
       </TabSessionGate>
     </Providers>
   );

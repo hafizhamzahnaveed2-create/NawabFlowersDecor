@@ -40,7 +40,7 @@ export function HeaderAuth() {
       {isStaff && (
         <Link
           href="/admin"
-          className="mr-1 hidden rounded-lg bg-burgundy px-3 py-1.5 text-sm font-medium text-ivory transition-colors hover:bg-burgundy-deep sm:inline-flex"
+          className="mr-1 hidden rounded-[var(--radius-control)] bg-burgundy px-3 py-1.5 text-sm font-medium text-ivory shadow-bloom transition-colors hover:bg-burgundy-deep sm:inline-flex"
         >
           Shop admin
         </Link>

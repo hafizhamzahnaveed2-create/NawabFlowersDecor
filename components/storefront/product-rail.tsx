@@ -16,22 +16,24 @@ export function ProductRail({
   if (products.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-12">
+    <section className="page-section mx-auto max-w-6xl px-6">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className="font-display text-3xl text-burgundy">{title}</h2>
-          {subtitle && <p className="mt-1 text-ink/60">{subtitle}</p>}
+          <h2 className="section-title">{title}</h2>
+          {subtitle ? (
+            <p className="mt-1.5 text-sm text-ink/60 sm:text-base">{subtitle}</p>
+          ) : null}
         </div>
-        {href && (
+        {href ? (
           <Link
             href={href}
-            className="shrink-0 text-sm font-medium text-sage underline-offset-4 hover:text-burgundy hover:underline"
+            className="shrink-0 text-sm font-medium text-sage underline-offset-4 transition-colors hover:text-burgundy hover:underline"
           >
             View all
           </Link>
-        )}
+        ) : null}
       </div>
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}

@@ -2,6 +2,10 @@ import Link from "next/link";
 import { listAdminProducts } from "@/lib/repositories/admin/products";
 import { formatPrice } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/field";
+import { EmptyState } from "@/components/ui/empty-state";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ProductRowActions } from "./product-row-actions";
 import { requirePagePermission } from "../require-page-permission";
 
@@ -21,41 +25,32 @@ export default async function AdminProductsPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl text-burgundy">Products</h1>
-          <p className="mt-1 text-ink/60">
-            {total === 1
-              ? "1 product in your shop — add, edit, or remove anytime."
-              : `${total} products in your shop — add, edit, or remove anytime.`}
-          </p>
-        </div>
-        <Link
-          href="/admin/products/new"
-          className="rounded-lg bg-burgundy px-5 py-3 text-base font-semibold text-ivory shadow-bloom transition-colors hover:bg-burgundy-deep"
-        >
-          + Add new product
-        </Link>
-      </div>
+      <AdminPageHeader
+        title="Products"
+        description={
+          total === 1
+            ? "1 product in your shop — add, edit, or remove anytime."
+            : `${total} products in your shop — add, edit, or remove anytime.`
+        }
+        actionHref="/admin/products/new"
+        actionLabel="+ Add product"
+      />
 
-      <form method="GET" className="mt-5 flex max-w-md gap-2">
-        <input
+      <form method="GET" className="mt-6 flex max-w-md gap-2">
+        <Input
           type="search"
           name="q"
           defaultValue={sp.q}
           placeholder="Search by name…"
           aria-label="Search products"
-          className="w-full rounded-lg border border-stone bg-white px-3.5 py-2.5 text-sm"
+          className="mt-0"
         />
-        <button
-          type="submit"
-          className="rounded-lg border border-stone bg-white px-4 py-2.5 text-sm font-medium hover:border-sage"
-        >
+        <Button type="submit" variant="secondary">
           Search
-        </button>
+        </Button>
       </form>
 
-      <div className="mt-5 overflow-x-auto rounded-petal border border-stone bg-white">
+      <div className="surface-panel mt-5 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-stone text-left text-xs uppercase tracking-wider text-ink/50">
@@ -142,18 +137,18 @@ export default async function AdminProductsPage({
           </tbody>
         </table>
         {products.length === 0 && (
-          <div className="px-4 py-12 text-center">
-            <p className="text-ink/60">
-              No products found{sp.q ? ` for “${sp.q}”` : ""}.
-            </p>
-            {!sp.q && (
-              <Link
-                href="/admin/products/new"
-                className="mt-4 inline-flex rounded-lg bg-burgundy px-5 py-2.5 font-medium text-ivory hover:bg-burgundy-deep"
-              >
-                + Add your first product
-              </Link>
-            )}
+          <div className="p-4">
+            <EmptyState
+              title={sp.q ? `No matches for “${sp.q}”` : "No products yet"}
+              description={
+                sp.q
+                  ? "Try another search, or clear the filter to see everything."
+                  : "Add your first bouquet, stem, or gift add-on to open the shop."
+              }
+              actionHref={sp.q ? undefined : "/admin/products/new"}
+              actionLabel={sp.q ? undefined : "+ Add your first product"}
+              className="border-0 shadow-none"
+            />
           </div>
         )}
       </div>
