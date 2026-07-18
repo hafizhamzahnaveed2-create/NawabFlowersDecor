@@ -6,7 +6,11 @@ export const authConfig = {
   pages: {
     signIn: "/login",
   },
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    // Hard ceiling if a cookie somehow survives; tab close is handled client-side.
+    maxAge: 12 * 60 * 60, // 12 hours
+  },
   callbacks: {
     jwt({ token, user }) {
       if (user?.id) {

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { registerSchema } from "@/lib/validation/auth";
+import { markAuthTabSession } from "@/lib/auth-session-tab";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -49,6 +50,7 @@ export function RegisterForm() {
         return;
       }
 
+      markAuthTabSession();
       const callback = searchParams.get("callbackUrl");
       router.push(callback && callback.startsWith("/") ? callback : "/account");
       router.refresh();
