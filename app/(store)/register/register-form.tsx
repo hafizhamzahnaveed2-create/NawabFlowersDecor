@@ -40,6 +40,7 @@ export function RegisterForm() {
         throw new Error(data.error ?? "Could not create your account");
       }
 
+      markAuthTabSession();
       const result = await signIn("credentials", {
         email: parsed.data.email,
         password: parsed.data.password,

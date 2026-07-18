@@ -45,6 +45,8 @@ export function LoginForm() {
     }
 
     setSubmitting(true);
+    // Mark before signIn so AuthSessionGuard never treats this as a stale cookie.
+    markAuthTabSession();
     const result = await signIn("credentials", {
       ...parsed.data,
       redirect: false,
