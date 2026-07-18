@@ -5,6 +5,7 @@ import {
 } from "@/lib/delivery";
 import type {
   DeliveryScheduleInput,
+  LoyaltySettingInput,
   PaymentAccountInput,
   SocialLinkInput,
 } from "@/lib/validation/settings";
@@ -207,4 +208,34 @@ export async function setDeliveryScheduleSettings(
   await setSetting("delivery.min_lead_days", String(minLeadDays), userId);
   await setSetting("delivery.max_lead_days", String(maxLeadDays), userId);
   return { minLeadDays, maxLeadDays, sameDayDelivery: minLeadDays === 0 };
+}
+
+const DEFAULT_LOYALTY_RUPEES_PER_POINT = 100;
+
+export async function getLoyaltySettings() {
+  const [enabled, rupeesPerPoint] = await Promise.all([
+    getSetting("loyalty.enabled"),
+    getSetting("loyalty.rupees_per_point"),
+  ]);
+  const parsed = rupeesPerPoint != null ? Number(rupeesPerPoint) : NaN;
+  return {
+    enabled: enabled !== "false",
+    rupeesPerPoint:
+      Number.isFinite(parsed) && parsed >= 1
+        ? Math.trunc(parsed)
+        : DEFAULT_LOYALTY_RUPEES_PER_POINT,
+  };
+}
+
+export async function setLoyaltySettings(
+  input: LoyaltySettingInput,
+  userId: string | null,
+) {
+  await setSetting("loyalty.enabled", String(input.enabled), userId);
+  await setSetting(
+    "loyalty.rupees_per_point",
+    String(input.rupeesPerPoint),
+    userId,
+  );
+  return input;
 }

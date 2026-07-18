@@ -82,3 +82,11 @@ export type DeliveryScheduleInput = z.infer<typeof deliveryScheduleSchema>;
 export const paymentVerifySchema = z.object({
   decision: z.enum(["VERIFIED", "REJECTED"]),
 });
+
+/** Rs spent required to earn 1 loyalty point (e.g. 100 = 1 pt per Rs 100). */
+export const loyaltySettingSchema = z.object({
+  enabled: z.boolean(),
+  rupeesPerPoint: z.coerce.number().int().min(1).max(1_000_000),
+});
+
+export type LoyaltySettingInput = z.infer<typeof loyaltySettingSchema>;

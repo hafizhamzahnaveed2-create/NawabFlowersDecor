@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@/lib/generated/prisma/client";
+import { getLoyaltySettings } from "@/lib/repositories/settings";
 
 export async function subscribeNewsletter(email: string) {
   return prisma.newsletterSubscriber.upsert({
@@ -85,13 +86,19 @@ export async function getLoyaltyPoints(userId: string) {
   return user?.loyaltyPoints ?? 0;
 }
 
-/** 1 loyalty point per Rs 100 spent (floor). */
-export function pointsForOrderTotal(total: number): number {
-  return Math.floor(total / 100);
+/** Points earned for an order total using the given Rs-per-point rate. */
+export function pointsForOrderTotal(
+  total: number,
+  rupeesPerPoint = 100,
+): number {
+  if (rupeesPerPoint < 1 || total <= 0) return 0;
+  return Math.floor(total / rupeesPerPoint);
 }
 
 export async function awardLoyaltyPoints(userId: string, total: number) {
-  const points = pointsForOrderTotal(total);
+  const settings = await getLoyaltySettings();
+  if (!settings.enabled) return 0;
+  const points = pointsForOrderTotal(total, settings.rupeesPerPoint);
   if (points <= 0) return 0;
   await prisma.user.update({
     where: { id: userId },

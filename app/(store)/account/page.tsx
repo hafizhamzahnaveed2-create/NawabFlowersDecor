@@ -6,6 +6,7 @@ import { listOrdersForUser } from "@/lib/repositories/orders";
 import { listWishlist } from "@/lib/repositories/wishlist";
 import { getLoyaltyPoints } from "@/lib/repositories/retention";
 import { getAccountProfile } from "@/lib/repositories/account";
+import { getLoyaltySettings } from "@/lib/repositories/settings";
 import { formatPrice } from "@/lib/money";
 import { isSaleActive } from "@/lib/pricing";
 import { Badge } from "@/components/ui/badge";
@@ -39,12 +40,14 @@ export default async function AccountPage() {
   const session = await auth();
   if (!session?.user) redirect("/login?callbackUrl=/account");
 
-  const [orders, wishlist, loyaltyPoints, profile] = await Promise.all([
-    listOrdersForUser(session.user.id),
-    listWishlist(session.user.id),
-    getLoyaltyPoints(session.user.id),
-    getAccountProfile(session.user.id),
-  ]);
+  const [orders, wishlist, loyaltyPoints, profile, loyaltySettings] =
+    await Promise.all([
+      listOrdersForUser(session.user.id),
+      listWishlist(session.user.id),
+      getLoyaltyPoints(session.user.id),
+      getAccountProfile(session.user.id),
+      getLoyaltySettings(),
+    ]);
 
   const isStaff =
     session.user.role === "ADMIN" || session.user.role === "STAFF";
@@ -75,17 +78,20 @@ export default async function AccountPage() {
         }}
       />
 
-      <div className="mt-8 rounded-petal border border-stone bg-white px-5 py-4">
-        <p className="text-sm uppercase tracking-wider text-sage">
-          Loyalty points
-        </p>
-        <p className="mt-1 font-display text-3xl text-burgundy">
-          {loyaltyPoints}
-        </p>
-        <p className="mt-1 text-sm text-ink/60">
-          Earn 1 point per Rs 100 spent on completed orders.
-        </p>
-      </div>
+      {loyaltySettings.enabled && (
+        <div className="mt-8 rounded-petal border border-stone bg-white px-5 py-4">
+          <p className="text-sm uppercase tracking-wider text-sage">
+            Loyalty points
+          </p>
+          <p className="mt-1 font-display text-3xl text-burgundy">
+            {loyaltyPoints}
+          </p>
+          <p className="mt-1 text-sm text-ink/60">
+            Earn 1 point per Rs {loyaltySettings.rupeesPerPoint} spent on
+            completed orders.
+          </p>
+        </div>
+      )}
 
       <h2 className="mt-10 font-display text-2xl text-ink">Wishlist</h2>
       {wishlist.length === 0 ? (

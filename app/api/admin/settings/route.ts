@@ -6,6 +6,7 @@ import {
   maintenanceSettingSchema,
   featureFlagsSchema,
   deliveryScheduleSchema,
+  loyaltySettingSchema,
 } from "@/lib/validation/settings";
 import {
   deleteSocialLink,
@@ -18,6 +19,7 @@ import {
   getFeatureFlags,
   setFeatureFlags,
   setDeliveryScheduleSettings,
+  setLoyaltySettings,
 } from "@/lib/repositories/settings";
 
 export async function GET() {
@@ -75,6 +77,17 @@ export async function PUT(request: Request) {
       );
     }
     await setDeliveryScheduleSettings(parsed.data, session.user.id);
+    return NextResponse.json({ ok: true });
+  }
+  if (body?.kind === "loyalty") {
+    const parsed = loyaltySettingSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid loyalty settings" },
+        { status: 400 },
+      );
+    }
+    await setLoyaltySettings(parsed.data, session.user.id);
     return NextResponse.json({ ok: true });
   }
   return NextResponse.json({ error: "Unknown kind" }, { status: 400 });

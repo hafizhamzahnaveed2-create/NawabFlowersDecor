@@ -21,17 +21,20 @@ export function SettingsForms({
   socials,
   maintenance,
   features,
+  loyalty,
 }: {
   whatsapp: string | null;
   socials: Social[];
   maintenance: { enabled: boolean; message: string };
   features: { builder: boolean; reviews: boolean; newsletter: boolean };
+  loyalty: { enabled: boolean; rupeesPerPoint: number };
 }) {
   const router = useRouter();
   const [waError, setWaError] = useState<string | null>(null);
   const [socialError, setSocialError] = useState<string | null>(null);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
   const [featuresError, setFeaturesError] = useState<string | null>(null);
+  const [loyaltyError, setLoyaltyError] = useState<string | null>(null);
   const [platformChoice, setPlatformChoice] = useState<string>("instagram");
 
   const saveWa = useMutation({
@@ -123,6 +126,27 @@ export function SettingsForms({
       router.refresh();
     },
     onError: (e: Error) => setFeaturesError(e.message),
+  });
+
+  const saveLoyalty = useMutation({
+    mutationFn: async (form: FormData) => {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "loyalty",
+          enabled: form.get("enabled") === "on",
+          rupeesPerPoint: Number(form.get("rupeesPerPoint") ?? 100),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Could not save");
+    },
+    onSuccess: () => {
+      setLoyaltyError(null);
+      router.refresh();
+    },
+    onError: (e: Error) => setLoyaltyError(e.message),
   });
 
   async function remove(id: string) {
@@ -303,6 +327,48 @@ export function SettingsForms({
         <FieldError message={maintenanceError ?? undefined} />
         <Button type="submit" className="mt-4" disabled={saveMaintenance.isPending}>
           {saveMaintenance.isPending ? "Saving…" : "Save maintenance"}
+        </Button>
+      </form>
+
+      <form
+        className="rounded-petal border border-stone bg-white p-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          saveLoyalty.mutate(new FormData(e.currentTarget));
+        }}
+      >
+        <h2 className="font-display text-xl text-burgundy">Loyalty points</h2>
+        <p className="mt-1 text-sm text-ink/60">
+          Earn points on completed orders for signed-in customers. Turn the
+          program off anytime, or change how much they must spend per point.
+        </p>
+        <label className="mt-4 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="enabled"
+            defaultChecked={loyalty.enabled}
+            className="accent-burgundy"
+          />
+          Loyalty points on
+        </label>
+        <div className="mt-3 max-w-xs">
+          <Label htmlFor="rupeesPerPoint">Rs spent per 1 point</Label>
+          <Input
+            id="rupeesPerPoint"
+            name="rupeesPerPoint"
+            type="number"
+            min={1}
+            step={1}
+            required
+            defaultValue={loyalty.rupeesPerPoint}
+          />
+          <p className="mt-1.5 text-xs text-ink/50">
+            Example: 100 means Rs 100 spent = 1 point (floored).
+          </p>
+        </div>
+        <FieldError message={loyaltyError ?? undefined} />
+        <Button type="submit" className="mt-4" disabled={saveLoyalty.isPending}>
+          {saveLoyalty.isPending ? "Saving…" : "Save loyalty"}
         </Button>
       </form>
 
