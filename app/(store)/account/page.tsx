@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth, signOut } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { listOrdersForUser } from "@/lib/repositories/orders";
 import { listWishlist } from "@/lib/repositories/wishlist";
 import { getLoyaltyPoints } from "@/lib/repositories/retention";
@@ -14,6 +14,7 @@ import { WishlistRemoveButton } from "@/components/storefront/wishlist-remove-bu
 import { ProfileSettings } from "@/components/account/profile-settings";
 import { AccountStaffBanner } from "@/components/account/account-staff-banner";
 import { TabSessionGate } from "@/components/auth/tab-session-gate";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 
 export const metadata = { title: "My account" };
 
@@ -60,19 +61,7 @@ export default async function AccountPage() {
             Signed in as {session.user.email}
           </p>
         </div>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/" });
-          }}
-        >
-          <button
-            type="submit"
-            className="rounded-lg border border-stone bg-white px-4 py-2 text-sm font-medium transition-colors hover:border-sage hover:text-burgundy"
-          >
-            Sign out
-          </button>
-        </form>
+        <SignOutButton className="rounded-lg border border-stone bg-white px-4 py-2 text-sm font-medium transition-colors hover:border-sage hover:text-burgundy" />
       </div>
 
       {isStaff && <AccountStaffBanner />}

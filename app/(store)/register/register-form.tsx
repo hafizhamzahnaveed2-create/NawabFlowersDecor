@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { registerSchema } from "@/lib/validation/auth";
-import { markAuthTabSession } from "@/lib/auth-session-tab";
+import {
+  clearAuthTabSession,
+  markAuthTabSession,
+} from "@/lib/auth-session-tab";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -40,6 +43,8 @@ export function RegisterForm() {
         throw new Error(data.error ?? "Could not create your account");
       }
 
+      await signOut({ redirect: false });
+      clearAuthTabSession();
       markAuthTabSession();
       const result = await signIn("credentials", {
         email: parsed.data.email,
@@ -47,6 +52,7 @@ export function RegisterForm() {
         redirect: false,
       });
       if (result?.error) {
+        clearAuthTabSession();
         router.push("/login");
         return;
       }

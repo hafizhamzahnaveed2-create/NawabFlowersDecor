@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSession, signIn } from "next-auth/react";
+import { getSession, signIn, signOut } from "next-auth/react";
 import { loginSchema } from "@/lib/validation/auth";
 import {
   clearAuthTabSession,
@@ -48,29 +48,47 @@ export function LoginForm() {
     }
 
     setSubmitting(true);
-    // Mark before signIn so AuthSessionGuard never treats this as a stale cookie.
-    markAuthTabSession();
-    const result = await signIn("credentials", {
-      ...parsed.data,
-      redirect: false,
-    });
-
-    if (result?.error) {
+    try {
+      // Drop any leftover session so switching accounts cannot reuse the old JWT.
+      await signOut({ redirect: false });
       clearAuthTabSession();
-      setSubmitting(false);
-      setError("Incorrect email or password.");
-      return;
-    }
 
-    const session = await getSession();
-    const next = resolvePostLoginPath(
-      session?.user?.role,
-      searchParams.get("callbackUrl"),
-    );
-    markAuthTabSession();
-    resetWelcomeForLogin();
-    router.push(next);
-    router.refresh();
+      // Mark before signIn so AuthSessionGuard never treats this as a stale cookie.
+      markAuthTabSession();
+      const result = await signIn("credentials", {
+        ...parsed.data,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        clearAuthTabSession();
+        setError("Incorrect email or password.");
+        return;
+      }
+
+      const session = await getSession();
+      // Guard against a stale client session still pointing at the previous user.
+      if (
+        session?.user?.email &&
+        session.user.email.toLowerCase() !== parsed.data.email
+      ) {
+        clearAuthTabSession();
+        await signOut({ redirect: false });
+        setError("Could not switch accounts. Please try again.");
+        return;
+      }
+
+      const next = resolvePostLoginPath(
+        session?.user?.role,
+        searchParams.get("callbackUrl"),
+      );
+      markAuthTabSession();
+      resetWelcomeForLogin();
+      router.push(next);
+      router.refresh();
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const registerHref = searchParams.get("callbackUrl")

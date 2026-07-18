@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth, signOut } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { Providers } from "@/app/providers";
 import { TabSessionGate } from "@/components/auth/tab-session-gate";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { SiteLogo } from "@/components/brand/site-logo";
 import { WelcomeSplash } from "@/components/welcome/welcome-splash";
 import { AdminNav } from "./admin-nav";
@@ -51,16 +52,7 @@ export default async function AdminLayout({
                   <Link href="/" className="text-blush hover:text-ivory">
                     View shop
                   </Link>
-                  <form
-                    action={async () => {
-                      "use server";
-                      await signOut({ redirectTo: "/" });
-                    }}
-                  >
-                    <button type="submit" className="text-blush hover:text-ivory">
-                      Sign out
-                    </button>
-                  </form>
+                  <SignOutButton className="text-blush hover:text-ivory" />
                 </div>
               </div>
             </div>
