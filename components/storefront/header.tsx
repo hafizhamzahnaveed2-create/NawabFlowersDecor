@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth";
 import { listCategories } from "@/lib/repositories/categories";
 import { SiteLogo } from "@/components/brand/site-logo";
 import { CartButton } from "@/components/storefront/cart-button";
+import { HeaderAuth } from "@/components/storefront/header-auth";
 
 export async function Header() {
-  const [categories, session] = await Promise.all([listCategories(), auth()]);
+  const categories = await listCategories();
 
   return (
     <header className="sticky top-0 z-30 border-b border-stone bg-ivory/90 backdrop-blur">
@@ -38,25 +38,7 @@ export async function Header() {
         </nav>
 
         <div className="flex items-center gap-1">
-          {(session?.user?.role === "ADMIN" ||
-            session?.user?.role === "STAFF") && (
-            <Link
-              href="/admin"
-              className="mr-1 hidden rounded-lg bg-burgundy px-3 py-1.5 text-sm font-medium text-ivory transition-colors hover:bg-burgundy-deep sm:inline-flex"
-            >
-              Shop admin
-            </Link>
-          )}
-          <Link
-            href={session?.user ? "/account" : "/login"}
-            className="rounded-lg p-2 text-ink transition-colors hover:bg-stone/50 hover:text-burgundy"
-            aria-label={session?.user ? "My account" : "Sign in"}
-          >
-            <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </Link>
+          <HeaderAuth />
           <CartButton />
         </div>
       </div>

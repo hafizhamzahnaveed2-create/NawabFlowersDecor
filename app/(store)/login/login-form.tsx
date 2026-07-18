@@ -5,7 +5,10 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSession, signIn } from "next-auth/react";
 import { loginSchema } from "@/lib/validation/auth";
-import { markAuthTabSession } from "@/lib/auth-session-tab";
+import {
+  clearAuthTabSession,
+  markAuthTabSession,
+} from "@/lib/auth-session-tab";
 import { resetWelcomeForLogin } from "@/components/welcome/welcome-splash";
 
 function resolvePostLoginPath(
@@ -53,6 +56,7 @@ export function LoginForm() {
     });
 
     if (result?.error) {
+      clearAuthTabSession();
       setSubmitting(false);
       setError("Incorrect email or password.");
       return;

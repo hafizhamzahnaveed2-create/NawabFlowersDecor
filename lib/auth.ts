@@ -47,10 +47,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     ...authConfig.callbacks,
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user?.id) {
         token.id = user.id;
         token.role = user.role;
+        token.name = user.name;
+        token.picture = user.image;
+      }
+      if (trigger === "update" && session?.user) {
+        if (typeof session.user.name === "string") {
+          token.name = session.user.name;
+        }
+        if ("image" in session.user) {
+          token.picture = session.user.image ?? null;
+        }
       }
       if (token.id && (token.role === "ADMIN" || token.role === "STAFF")) {
         token.permissions = await loadStaffPermissions(
@@ -67,6 +77,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         session.user.role = token.role;
         session.user.permissions = token.permissions ?? [];
+        if (typeof token.name === "string") session.user.name = token.name;
+        if (token.picture !== undefined) {
+          session.user.image =
+            typeof token.picture === "string" ? token.picture : null;
+        }
       }
       return session;
     },

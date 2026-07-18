@@ -5,11 +5,15 @@ import { auth, signOut } from "@/lib/auth";
 import { listOrdersForUser } from "@/lib/repositories/orders";
 import { listWishlist } from "@/lib/repositories/wishlist";
 import { getLoyaltyPoints } from "@/lib/repositories/retention";
+import { getAccountProfile } from "@/lib/repositories/account";
 import { formatPrice } from "@/lib/money";
 import { isSaleActive } from "@/lib/pricing";
 import { Badge } from "@/components/ui/badge";
 import { Price } from "@/components/storefront/price";
 import { WishlistRemoveButton } from "@/components/storefront/wishlist-remove-button";
+import { ProfileSettings } from "@/components/account/profile-settings";
+import { AccountStaffBanner } from "@/components/account/account-staff-banner";
+import { TabSessionGate } from "@/components/auth/tab-session-gate";
 
 export const metadata = { title: "My account" };
 
@@ -34,16 +38,20 @@ export default async function AccountPage() {
   const session = await auth();
   if (!session?.user) redirect("/login?callbackUrl=/account");
 
-  const [orders, wishlist, loyaltyPoints] = await Promise.all([
+  const [orders, wishlist, loyaltyPoints, profile] = await Promise.all([
     listOrdersForUser(session.user.id),
     listWishlist(session.user.id),
     getLoyaltyPoints(session.user.id),
+    getAccountProfile(session.user.id),
   ]);
 
   const isStaff =
     session.user.role === "ADMIN" || session.user.role === "STAFF";
 
+  if (!profile) redirect("/login?callbackUrl=/account");
+
   return (
+    <TabSessionGate callbackPath="/account">
     <div className="mx-auto max-w-4xl px-6 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -67,20 +75,16 @@ export default async function AccountPage() {
         </form>
       </div>
 
-      {isStaff && (
-        <Link
-          href="/admin"
-          className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-petal bg-burgundy px-5 py-4 text-ivory transition-colors hover:bg-burgundy-deep"
-        >
-          <div>
-            <p className="font-display text-xl">Shop admin</p>
-            <p className="mt-0.5 text-sm text-ivory/75">
-              Products, orders, settings, and the rest of the shop tools.
-            </p>
-          </div>
-          <span className="text-sm font-medium">Open dashboard →</span>
-        </Link>
-      )}
+      {isStaff && <AccountStaffBanner />}
+
+      <ProfileSettings
+        initial={{
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          image: profile.image,
+        }}
+      />
 
       <div className="mt-8 rounded-petal border border-stone bg-white px-5 py-4">
         <p className="text-sm uppercase tracking-wider text-sage">
@@ -195,5 +199,6 @@ export default async function AccountPage() {
         </ul>
       )}
     </div>
+    </TabSessionGate>
   );
 }

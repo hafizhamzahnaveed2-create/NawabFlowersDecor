@@ -4,17 +4,13 @@ import { useEffect, useRef } from "react";
 import { signOut, useSession } from "next-auth/react";
 import {
   AUTH_TAB_CHANNEL,
-  AUTH_TAB_SESSION_KEY,
+  hasAuthTabSession,
   markAuthTabSession,
 } from "@/lib/auth-session-tab";
 
 /**
- * Auth cookies can survive browser restarts. We also require a sessionStorage
- * marker (set on login) so closing the tab/window ends the session when the
- * site is opened again. Other open tabs keep the session alive via BroadcastChannel.
- *
- * Important: never clear the marker on a brief "unauthenticated" flicker from
- * SessionProvider — that raced with login and caused refresh loops.
+ * Clears leftover auth cookies when this browser tab was not the one that
+ * signed in (e.g. tab closed and a new one opened).
  */
 export function AuthSessionGuard() {
   const { status } = useSession();
@@ -24,10 +20,7 @@ export function AuthSessionGuard() {
     if (typeof BroadcastChannel === "undefined") return;
     const bc = new BroadcastChannel(AUTH_TAB_CHANNEL);
     bc.onmessage = (event) => {
-      if (
-        event.data === "ping" &&
-        sessionStorage.getItem(AUTH_TAB_SESSION_KEY) === "1"
-      ) {
+      if (event.data === "ping" && hasAuthTabSession()) {
         bc.postMessage("alive");
       }
     };
@@ -40,12 +33,11 @@ export function AuthSessionGuard() {
       return;
     }
 
-    if (sessionStorage.getItem(AUTH_TAB_SESSION_KEY) === "1") {
+    if (hasAuthTabSession()) {
       checkedRef.current = true;
       return;
     }
 
-    // Don't fight the login/register forms — they set the marker on success.
     const path = window.location.pathname;
     if (path.startsWith("/login") || path.startsWith("/register")) {
       return;
@@ -59,7 +51,7 @@ export function AuthSessionGuard() {
     let peerChannel: BroadcastChannel | null = null;
 
     const endStaleSession = () => {
-      if (sessionStorage.getItem(AUTH_TAB_SESSION_KEY) === "1") {
+      if (hasAuthTabSession()) {
         checkedRef.current = true;
         return;
       }
@@ -73,11 +65,9 @@ export function AuthSessionGuard() {
       });
     };
 
-    // Give login navigation a moment to write the tab marker before we decide
-    // this cookie is leftover from a closed browser session.
     const settle = window.setTimeout(() => {
       if (cancelled) return;
-      if (sessionStorage.getItem(AUTH_TAB_SESSION_KEY) === "1") {
+      if (hasAuthTabSession()) {
         checkedRef.current = true;
         return;
       }
@@ -102,13 +92,13 @@ export function AuthSessionGuard() {
         peerChannel = null;
         if (cancelled) return;
         checkedRef.current = true;
-        if (peerAlive || sessionStorage.getItem(AUTH_TAB_SESSION_KEY) === "1") {
+        if (peerAlive || hasAuthTabSession()) {
           markAuthTabSession();
           return;
         }
         endStaleSession();
-      }, 200);
-    }, 400);
+      }, 150);
+    }, 80);
 
     return () => {
       cancelled = true;
