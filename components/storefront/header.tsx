@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { listCategories } from "@/lib/repositories/categories";
+import { SiteLogo } from "@/components/brand/site-logo";
 import { CartButton } from "@/components/storefront/cart-button";
 
 export async function Header() {
@@ -9,11 +10,8 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-30 border-b border-stone bg-ivory/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
-        <Link href="/" className="shrink-0">
-          <span className="font-display text-2xl text-burgundy">Nawab</span>
-          <span className="ml-1.5 text-sm uppercase tracking-[0.2em] text-sage">
-            Flowers Decor
-          </span>
+        <Link href="/" className="shrink-0" aria-label="Nawab Flowers Decor home">
+          <SiteLogo size={44} />
         </Link>
 
         <nav aria-label="Categories" className="hidden md:block">
@@ -40,6 +38,15 @@ export async function Header() {
         </nav>
 
         <div className="flex items-center gap-1">
+          {(session?.user?.role === "ADMIN" ||
+            session?.user?.role === "STAFF") && (
+            <Link
+              href="/admin"
+              className="mr-1 hidden rounded-lg bg-burgundy px-3 py-1.5 text-sm font-medium text-ivory transition-colors hover:bg-burgundy-deep sm:inline-flex"
+            >
+              Shop admin
+            </Link>
+          )}
           <Link
             href={session?.user ? "/account" : "/login"}
             className="rounded-lg p-2 text-ink transition-colors hover:bg-stone/50 hover:text-burgundy"

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireStaff } from "@/lib/auth-helpers";
+import { requirePermission } from "@/lib/auth-helpers";
 import { productFormSchema } from "@/lib/validation/admin";
 import { createProduct } from "@/lib/repositories/admin/products";
 
 export async function POST(request: Request) {
-  const session = await requireStaff();
+  const session = await requirePermission("catalog.write");
   if (!session) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }

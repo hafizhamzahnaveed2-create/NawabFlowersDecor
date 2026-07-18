@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireStaff } from "@/lib/auth-helpers";
+import { requirePermission } from "@/lib/auth-helpers";
 import { productFormSchema } from "@/lib/validation/admin";
 import {
   deleteProduct,
@@ -9,7 +9,7 @@ import {
 type Params = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: Params) {
-  const session = await requireStaff();
+  const session = await requirePermission("catalog.write");
   if (!session) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
@@ -29,7 +29,7 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const session = await requireStaff();
+  const session = await requirePermission("catalog.write");
   if (!session) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }

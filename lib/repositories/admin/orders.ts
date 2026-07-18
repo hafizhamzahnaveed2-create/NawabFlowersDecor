@@ -104,6 +104,7 @@ export async function getAdminOrder(id: string) {
     subtotal: Number(order.subtotal),
     discountAmount: Number(order.discountAmount),
     deliveryFee: Number(order.deliveryFee),
+    taxAmount: Number(order.taxAmount),
     total: Number(order.total),
     deliveryDate: order.deliveryDate,
     deliveryTimeSlot: order.deliveryTimeSlot,

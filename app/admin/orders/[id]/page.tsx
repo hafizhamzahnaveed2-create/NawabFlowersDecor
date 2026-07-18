@@ -1,9 +1,12 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminOrder } from "@/lib/repositories/admin/orders";
+import { getOrderStatusHistory } from "@/lib/repositories/admin/activity";
 import { formatPrice } from "@/lib/money";
 import { StatusUpdater } from "./status-updater";
 import { PaymentVerificationPanel } from "./payment-verification";
+import { requirePagePermission } from "../../require-page-permission";
 
 export const metadata = { title: "Order · Admin" };
 
@@ -28,23 +31,36 @@ export default async function AdminOrderDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requirePagePermission("orders.read");
   const { id } = await params;
   const order = await getAdminOrder(id);
   if (!order) notFound();
+  const history = await getOrderStatusHistory(order.id);
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl text-burgundy">
-            {order.orderNumber}
-          </h1>
-          <p className="mt-1 text-ink/60">
-            Placed {placedAtFormatter.format(order.createdAt)}
-            {order.customerEmail ? ` · ${order.customerEmail}` : ""}
-          </p>
-        </div>
-        <StatusUpdater orderId={order.id} current={order.status} />
+      <Link
+        href="/admin/orders"
+        className="text-sm font-medium text-ink/60 hover:text-burgundy"
+      >
+        ← Back to all orders
+      </Link>
+      <div className="mt-3">
+        <h1 className="font-display text-3xl text-burgundy">
+          {order.orderNumber}
+        </h1>
+        <p className="mt-1 text-ink/60">
+          Placed {placedAtFormatter.format(order.createdAt)}
+          {order.customerEmail ? ` · ${order.customerEmail}` : ""}
+        </p>
+      </div>
+
+      <div className="mt-6">
+        <StatusUpdater
+          orderId={order.id}
+          current={order.status}
+          history={history}
+        />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -100,6 +116,12 @@ export default async function AdminOrderDetailPage({
                 <dt className="text-ink/60">Delivery</dt>
                 <dd>{formatPrice(order.deliveryFee)}</dd>
               </div>
+              {order.taxAmount > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-ink/60">Tax</dt>
+                  <dd>{formatPrice(order.taxAmount)}</dd>
+                </div>
+              )}
               <div className="flex justify-between border-t border-stone pt-2 text-base font-semibold">
                 <dt>Total</dt>
                 <dd>{formatPrice(order.total)}</dd>

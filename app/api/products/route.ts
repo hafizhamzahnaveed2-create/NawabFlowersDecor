@@ -5,7 +5,7 @@ import { listProducts } from "@/lib/repositories/products";
 const querySchema = z.object({
   category: z.string().optional(),
   sub: z.string().optional(),
-  type: z.enum(["BOUQUET", "RAW_MATERIAL", "ADDON"]).optional(),
+  type: z.enum(["BOUQUET", "RAW_MATERIAL", "ADDON", "SERVICE"]).optional(),
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
   inStock: z.coerce.boolean().optional(),

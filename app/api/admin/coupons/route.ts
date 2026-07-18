@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
-import { requireStaff } from "@/lib/auth-helpers";
+import { requirePermission } from "@/lib/auth-helpers";
 import { couponFormSchema } from "@/lib/validation/growth";
 import { createCoupon, listCoupons } from "@/lib/repositories/coupons";
 
 export async function GET() {
-  const session = await requireStaff();
+  const session = await requirePermission("coupons.write");
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   return NextResponse.json({ coupons: await listCoupons() });
 }
 
 export async function POST(request: Request) {
-  const session = await requireStaff();
+  const session = await requirePermission("coupons.write");
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await request.json().catch(() => null);
   const parsed = couponFormSchema.safeParse(body);

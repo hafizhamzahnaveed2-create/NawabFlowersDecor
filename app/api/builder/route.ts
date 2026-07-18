@@ -5,8 +5,17 @@ import {
   BuilderError,
   createCustomBouquet,
 } from "@/lib/repositories/custom-bouquets";
+import { getFeatureFlags } from "@/lib/repositories/settings";
 
 export async function POST(request: Request) {
+  const flags = await getFeatureFlags();
+  if (!flags.builder) {
+    return NextResponse.json(
+      { error: "The bouquet builder is temporarily unavailable." },
+      { status: 503 },
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = createCustomBouquetSchema.safeParse(body);
   if (!parsed.success) {

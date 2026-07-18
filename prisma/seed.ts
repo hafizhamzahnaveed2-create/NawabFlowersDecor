@@ -18,6 +18,13 @@ const PERMISSIONS = [
   { key: "orders.fulfill", description: "Update order status and fulfilment" },
   { key: "content.write", description: "Edit homepage sections, banners, FAQs" },
   { key: "staff.manage", description: "Manage staff accounts and roles" },
+  { key: "analytics.read", description: "View analytics and exports" },
+  { key: "settings.write", description: "Edit shop settings, shipping, and flags" },
+  { key: "coupons.write", description: "Create and manage promo codes" },
+  { key: "reviews.moderate", description: "Approve or dismiss product reviews" },
+  { key: "payments.write", description: "Manage payment accounts and verify receipts" },
+  { key: "activity.read", description: "View the activity log" },
+  { key: "builder.write", description: "Manage bouquet builder components" },
 ];
 
 const STAFF_ROLES: { name: string; description: string; permissions: string[] }[] = [
@@ -28,8 +35,13 @@ const STAFF_ROLES: { name: string; description: string; permissions: string[] }[
   },
   {
     name: "Catalog Manager",
-    description: "Manages products, stock, and categories",
-    permissions: ["catalog.read", "catalog.write", "orders.read"],
+    description: "Manages products, stock, builder, and can view orders",
+    permissions: [
+      "catalog.read",
+      "catalog.write",
+      "builder.write",
+      "orders.read",
+    ],
   },
   {
     name: "Order Fulfillment",
@@ -49,6 +61,25 @@ const CATEGORIES: { name: string; slug: string; subs: { name: string; slug: stri
       { name: "Wedding", slug: "wedding-bouquets" },
       { name: "Condolence", slug: "condolence-bouquets" },
       { name: "Congratulations", slug: "congratulations-bouquets" },
+      { name: "Chocolate bouquets", slug: "chocolate-bouquets" },
+      { name: "Currency bouquets", slug: "currency-bouquets" },
+      { name: "Fruit bouquets", slug: "fruit-bouquets" },
+      { name: "Balloon bouquets", slug: "balloon-bouquets" },
+      { name: "Mixed gift bouquets", slug: "mixed-gift-bouquets" },
+    ],
+  },
+  {
+    name: "Decorations",
+    slug: "decorations",
+    subs: [
+      { name: "Car decoration", slug: "car-decoration" },
+      { name: "Stage decoration", slug: "stage-decoration" },
+      { name: "Bridal room decoration", slug: "bridal-room-decoration" },
+      { name: "Wedding décor", slug: "wedding-decoration" },
+      { name: "Engagement décor", slug: "engagement-decoration" },
+      { name: "Birthday party décor", slug: "birthday-party-decoration" },
+      { name: "Mehndi / Mayun décor", slug: "mehndi-decoration" },
+      { name: "Corporate event décor", slug: "corporate-event-decoration" },
     ],
   },
   {
@@ -101,7 +132,7 @@ const img = (id: string) => `https://images.unsplash.com/${id}?w=1200&q=80`;
 
 type SeedProduct = {
   name: string;
-  type: "BOUQUET" | "RAW_MATERIAL" | "ADDON";
+  type: "BOUQUET" | "RAW_MATERIAL" | "ADDON" | "SERVICE";
   description: string;
   categorySlug: string;
   subCategorySlug: string;
@@ -430,6 +461,70 @@ const PRODUCTS: SeedProduct[] = [
     stock: 15,
     images: ["photo-1591886960571-74d43a9d4166"],
   },
+  {
+    name: "Ferrero Rocher Tower",
+    type: "BOUQUET",
+    description:
+      "A tall chocolate bouquet of Ferrero Rocher, wrapped in gold tissue — no wilting, just delight.",
+    categorySlug: "bouquets",
+    subCategorySlug: "chocolate-bouquets",
+    price: 4500,
+    stock: 20,
+    isNewArrival: true,
+    images: ["photo-1549007994-cb92caebd54b"],
+    tags: [["OCCASION", "Birthday"], ["OCCASION", "Anniversary"]],
+  },
+  {
+    name: "Currency Rose Bouquet",
+    type: "BOUQUET",
+    description:
+      "Folded notes arranged as roses with fresh greenery — a memorable gift for celebrations.",
+    categorySlug: "bouquets",
+    subCategorySlug: "currency-bouquets",
+    price: 8000,
+    stock: 10,
+    isFeatured: true,
+    images: ["photo-1518895949257-7621c3c786d7"],
+    tags: [["OCCASION", "Wedding"], ["OCCASION", "Congratulations"]],
+  },
+  {
+    name: "Bridal Car Décor Package",
+    type: "SERVICE",
+    description:
+      "Full floral car decoration for the baraat — hood, doors, and rear, tailored to your colours.",
+    categorySlug: "decorations",
+    subCategorySlug: "car-decoration",
+    price: 15000,
+    stock: 5,
+    isFeatured: true,
+    images: ["photo-1519225421980-715cb0215aed"],
+    tags: [["OCCASION", "Wedding"]],
+  },
+  {
+    name: "Stage Backdrop Fresh Florals",
+    type: "SERVICE",
+    description:
+      "Stage and backdrop floral installation for weddings and events — measured and installed on site.",
+    categorySlug: "decorations",
+    subCategorySlug: "stage-decoration",
+    price: 45000,
+    stock: 3,
+    images: ["photo-1464366400600-7168b8af9bc3"],
+    tags: [["OCCASION", "Wedding"]],
+  },
+  {
+    name: "Bridal Room Fresh Setup",
+    type: "SERVICE",
+    description:
+      "Soft floral styling for the bridal room — vanity, bed headboard, and photo corners.",
+    categorySlug: "decorations",
+    subCategorySlug: "bridal-room-decoration",
+    price: 22000,
+    stock: 4,
+    isNewArrival: true,
+    images: ["photo-1520854221256-17451cc331bf"],
+    tags: [["OCCASION", "Wedding"]],
+  },
 ];
 
 async function main() {
@@ -489,6 +584,62 @@ async function main() {
     console.log(`Admin user ready: ${adminEmail}`);
   } else {
     console.warn("SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD not set — skipping admin user.");
+  }
+
+  // Limited-permission staff accounts for local RBAC testing
+  const staffPassword =
+    process.env.SEED_STAFF_PASSWORD ?? process.env.SEED_ADMIN_PASSWORD;
+  if (staffPassword) {
+    const staffHash = await bcrypt.hash(staffPassword, 12);
+    const catalogRole = await prisma.staffRole.findUnique({
+      where: { name: "Catalog Manager" },
+    });
+    const ordersRole = await prisma.staffRole.findUnique({
+      where: { name: "Order Fulfillment" },
+    });
+
+    const catalog = await prisma.user.upsert({
+      where: { email: "catalog@nawabflowers.local" },
+      update: { role: "STAFF", passwordHash: staffHash },
+      create: {
+        email: "catalog@nawabflowers.local",
+        name: "Catalog Manager",
+        passwordHash: staffHash,
+        role: "STAFF",
+      },
+    });
+    await prisma.staffProfile.upsert({
+      where: { userId: catalog.id },
+      update: { staffRoleId: catalogRole?.id, isActive: true },
+      create: {
+        userId: catalog.id,
+        staffRoleId: catalogRole?.id,
+        isActive: true,
+      },
+    });
+
+    const orders = await prisma.user.upsert({
+      where: { email: "orders@nawabflowers.local" },
+      update: { role: "STAFF", passwordHash: staffHash },
+      create: {
+        email: "orders@nawabflowers.local",
+        name: "Order Fulfillment",
+        passwordHash: staffHash,
+        role: "STAFF",
+      },
+    });
+    await prisma.staffProfile.upsert({
+      where: { userId: orders.id },
+      update: { staffRoleId: ordersRole?.id, isActive: true },
+      create: {
+        userId: orders.id,
+        staffRoleId: ordersRole?.id,
+        isActive: true,
+      },
+    });
+    console.log(
+      "Staff users ready: catalog@nawabflowers.local, orders@nawabflowers.local",
+    );
   }
 
   // Category tree
@@ -736,6 +887,14 @@ async function main() {
       imageUrl: null,
       isPublished: true,
     },
+    {
+      key: "announcement.ticker",
+      kind: "ANNOUNCEMENT" as const,
+      title: "Eid pre-orders open · Free vase polish with every bouquet this week",
+      body: null,
+      imageUrl: null,
+      isPublished: false,
+    },
   ];
   for (const block of contentBlocks) {
     await prisma.contentBlock.upsert({
@@ -969,6 +1128,70 @@ async function main() {
   console.log(
     `Seeded WhatsApp setting, ${paymentAccounts.length} payment accounts, ${socials.length} social links.`,
   );
+
+  // ---------------------------------------------------------------- Shipping / tax / flags
+  const flagDefaults: { key: string; value: string }[] = [
+    { key: "delivery.default_fee", value: "250" },
+    { key: "delivery.min_lead_days", value: "0" },
+    { key: "delivery.max_lead_days", value: "30" },
+    { key: "maintenance.enabled", value: "false" },
+    { key: "maintenance.message", value: "We’re preparing today’s stems — back shortly." },
+    { key: "feature.builder", value: "true" },
+    { key: "feature.reviews", value: "true" },
+    { key: "feature.newsletter", value: "true" },
+  ];
+  for (const s of flagDefaults) {
+    await prisma.siteSetting.upsert({
+      where: { key: s.key },
+      update: {},
+      create: s,
+    });
+  }
+
+  const existingZones = await prisma.deliveryZone.count();
+  if (existingZones === 0) {
+    await prisma.deliveryZone.createMany({
+      data: [
+        {
+          name: "Lahore city",
+          city: "Lahore",
+          area: null,
+          fee: 250,
+          sortOrder: 0,
+          isActive: true,
+        },
+        {
+          name: "Lahore — DHA / Gulberg",
+          city: "Lahore",
+          area: "DHA",
+          fee: 350,
+          sortOrder: 1,
+          isActive: true,
+        },
+        {
+          name: "Lahore — Gulberg",
+          city: "Lahore",
+          area: "Gulberg",
+          fee: 350,
+          sortOrder: 2,
+          isActive: true,
+        },
+      ],
+    });
+  }
+
+  const existingTax = await prisma.taxRule.count();
+  if (existingTax === 0) {
+    await prisma.taxRule.create({
+      data: {
+        name: "Sales tax (demo 5%)",
+        ratePercent: 5,
+        city: null,
+        isActive: true,
+      },
+    });
+  }
+  console.log("Seeded delivery zones, tax rule, and feature/maintenance settings.");
 
   const counts = {
     products: await prisma.product.count(),

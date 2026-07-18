@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/db";
+import {
+  DEFAULT_MAX_LEAD_DAYS,
+  DEFAULT_MIN_LEAD_DAYS,
+} from "@/lib/delivery";
 import type {
+  DeliveryScheduleInput,
   PaymentAccountInput,
   SocialLinkInput,
 } from "@/lib/validation/settings";
@@ -128,4 +133,78 @@ export async function upsertSocialLink(
 export async function deleteSocialLink(id: string, userId: string | null) {
   await prisma.socialLink.delete({ where: { id } });
   await logActivity(userId, "social_link.delete", "SocialLink", id);
+}
+
+export async function getMaintenanceSettings() {
+  const [enabled, message] = await Promise.all([
+    getSetting("maintenance.enabled"),
+    getSetting("maintenance.message"),
+  ]);
+  return {
+    enabled: enabled === "true",
+    message:
+      message ??
+      "We're preparing today's stems — back shortly.",
+  };
+}
+
+export async function setMaintenanceSettings(
+  input: { enabled: boolean; message: string },
+  userId: string | null,
+) {
+  await setSetting("maintenance.enabled", String(input.enabled), userId);
+  await setSetting("maintenance.message", input.message, userId);
+}
+
+export async function getFeatureFlags() {
+  const [builder, reviews, newsletter] = await Promise.all([
+    getSetting("feature.builder"),
+    getSetting("feature.reviews"),
+    getSetting("feature.newsletter"),
+  ]);
+  return {
+    builder: builder !== "false",
+    reviews: reviews !== "false",
+    newsletter: newsletter !== "false",
+  };
+}
+
+export async function setFeatureFlags(
+  input: { builder: boolean; reviews: boolean; newsletter: boolean },
+  userId: string | null,
+) {
+  await setSetting("feature.builder", String(input.builder), userId);
+  await setSetting("feature.reviews", String(input.reviews), userId);
+  await setSetting("feature.newsletter", String(input.newsletter), userId);
+}
+
+export async function getDeliveryScheduleSettings() {
+  const [minLead, maxLead] = await Promise.all([
+    getSetting("delivery.min_lead_days"),
+    getSetting("delivery.max_lead_days"),
+  ]);
+  const parsedMin = minLead != null ? Number(minLead) : DEFAULT_MIN_LEAD_DAYS;
+  const parsedMax = maxLead != null ? Number(maxLead) : DEFAULT_MAX_LEAD_DAYS;
+  const minLeadDays = Number.isFinite(parsedMin)
+    ? Math.max(0, Math.min(14, Math.trunc(parsedMin)))
+    : DEFAULT_MIN_LEAD_DAYS;
+  const maxLeadDays = Number.isFinite(parsedMax)
+    ? Math.max(1, Math.min(90, Math.trunc(parsedMax)))
+    : DEFAULT_MAX_LEAD_DAYS;
+  return {
+    minLeadDays,
+    maxLeadDays: Math.max(maxLeadDays, minLeadDays || 1),
+    sameDayDelivery: minLeadDays === 0,
+  };
+}
+
+export async function setDeliveryScheduleSettings(
+  input: DeliveryScheduleInput,
+  userId: string | null,
+) {
+  const minLeadDays = input.sameDayDelivery ? 0 : 1;
+  const maxLeadDays = Math.max(input.maxLeadDays, minLeadDays || 1);
+  await setSetting("delivery.min_lead_days", String(minLeadDays), userId);
+  await setSetting("delivery.max_lead_days", String(maxLeadDays), userId);
+  return { minLeadDays, maxLeadDays, sameDayDelivery: minLeadDays === 0 };
 }

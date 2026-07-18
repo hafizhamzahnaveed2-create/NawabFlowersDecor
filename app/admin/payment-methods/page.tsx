@@ -1,9 +1,11 @@
 import { listPaymentAccounts } from "@/lib/repositories/settings";
 import { PaymentAccountsManager } from "./payment-accounts-manager";
+import { requirePagePermission } from "../require-page-permission";
 
 export const metadata = { title: "Payment methods · Admin" };
 
 export default async function AdminPaymentMethodsPage() {
+  await requirePagePermission("payments.write");
   const accounts = await listPaymentAccounts();
 
   return (

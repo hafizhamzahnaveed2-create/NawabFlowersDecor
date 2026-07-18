@@ -1,71 +1,131 @@
-/** Quiet brand-tinted icons for payment methods & socials — no garish packs. */
+﻿/** Payment & social brand marks used across storefront and checkout. */
 
 export function PaymentMethodIcon({
   iconKey,
-  className = "size-8",
+  className = "h-7 w-auto",
+  variant = "full",
 }: {
   iconKey: string;
   className?: string;
+  /** `full` = official mark + label; `mark` = logo only (when name sits beside it). */
+  variant?: "full" | "mark";
 }) {
-  const common = `${className} text-burgundy`;
   switch (iconKey) {
     case "jazzcash":
       return (
-        <span
-          className={`inline-flex items-center justify-center rounded-lg bg-burgundy/10 font-display text-xs font-semibold ${common}`}
-          aria-hidden
-        >
-          JC
-        </span>
+        <BrandPaymentLogo
+          src="/payment/jazzcash.png"
+          label="JazzCash"
+          className={className}
+          variant={variant}
+        />
       );
     case "easypaisa":
       return (
-        <span
-          className={`inline-flex items-center justify-center rounded-lg bg-sage/20 font-display text-xs font-semibold text-sage ${className}`}
-          aria-hidden
-        >
-          EP
-        </span>
+        <BrandPaymentLogo
+          src="/payment/easypaisa.png"
+          label="EasyPaisa"
+          className={className}
+          variant={variant}
+        />
       );
+    case "bank":
     case "card":
-      return (
-        <svg viewBox="0 0 32 24" className={common} aria-hidden>
-          <rect
-            x="1"
-            y="3"
-            width="30"
-            height="18"
-            rx="3"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <rect x="1" y="8" width="30" height="4" fill="currentColor" opacity="0.35" />
-          <circle cx="22" cy="16" r="2.5" fill="currentColor" opacity="0.5" />
-          <circle cx="26" cy="16" r="2.5" fill="currentColor" opacity="0.35" />
-        </svg>
-      );
+      return <BankTransferLogo className={className} variant={variant} />;
     default:
-      return (
-        <svg viewBox="0 0 24 24" className={common} fill="none" aria-hidden>
-          <rect
-            x="3"
-            y="6"
-            width="18"
-            height="12"
-            rx="2"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M3 10h18"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-        </svg>
-      );
+      return <BankTransferLogo className={className} variant={variant} />;
   }
 }
+
+function BrandPaymentLogo({
+  src,
+  label,
+  className,
+  variant,
+}: {
+  src: string;
+  label: string;
+  className?: string;
+  variant: "full" | "mark";
+}) {
+  if (variant === "mark") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- local brand assets in /public
+      <img
+        src={src}
+        alt={label}
+        className={`object-contain ${className ?? "size-7"}`}
+      />
+    );
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center gap-2.5 ${className ?? ""}`}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- local brand assets in /public */}
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        className="h-8 w-8 shrink-0 object-contain"
+      />
+      <span className="text-sm font-semibold tracking-tight text-ink">
+        {label}
+      </span>
+    </span>
+  );
+}
+
+/** Bank transfer â€” quiet institutional mark (no third-party asset). */
+function BankTransferLogo({
+  className,
+  variant,
+}: {
+  className?: string;
+  variant: "full" | "mark";
+}) {
+  const width = variant === "mark" ? 36 : 156;
+  return (
+    <svg
+      viewBox={`0 0 ${width} 36`}
+      className={className}
+      role="img"
+      aria-label="Bank transfer"
+    >
+      <title>Bank transfer</title>
+      <rect width="36" height="36" rx="8" fill="#582B35" />
+      <path
+        d="M8 15.5 18 9l10 6.5V27H8V15.5z"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 27V17.5h3.2V27M16.4 27V17.5h3.2V27M20.8 27V17.5H24V27"
+        stroke="#fff"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <path d="M7 27h22" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+      {variant === "full" && (
+        <text
+          x="44"
+          y="23.5"
+          fill="#1a1a1a"
+          fontFamily="system-ui, -apple-system, Segoe UI, sans-serif"
+          fontSize="13"
+          fontWeight="700"
+          letterSpacing="-0.02em"
+        >
+          Bank transfer
+        </text>
+      )}
+    </svg>
+  );
+}
+
 
 export function SocialPlatformIcon({
   platform,
@@ -111,7 +171,36 @@ export function SocialPlatformIcon({
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
         </svg>
       );
+    case "pinterest":
+      return (
+        <svg {...props}>
+          <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 01.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.888-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12.017 24c6.624 0 11.99-5.367 11.99-11.987C24.007 5.367 18.641.001 12.017.001z" />
+        </svg>
+      );
+    case "linkedin":
+      return (
+        <svg {...props}>
+          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+        </svg>
+      );
+    case "x":
+    case "twitter":
+      return (
+        <svg {...props}>
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.727-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+        </svg>
+      );
     default:
-      return null;
+      // Generic external-link glyph for Snapchat and any custom platform
+      return (
+        <svg {...props} fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+          />
+        </svg>
+      );
   }
 }
+

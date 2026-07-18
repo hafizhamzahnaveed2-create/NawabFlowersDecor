@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { useCart, cartSubtotal } from "@/lib/cart/store";
 import { formatPrice } from "@/lib/money";
 import {
-  DELIVERY_FEE,
+  DEFAULT_DELIVERY_FEE,
   DELIVERY_TIME_SLOTS,
   earliestDeliveryDate,
   latestDeliveryDate,
@@ -29,14 +29,26 @@ type AppliedCoupon = {
   discount: number;
 };
 
+type CheckoutQuote = {
+  deliveryFee: number;
+  taxAmount: number;
+  total: number;
+  deliveryZoneName: string | null;
+  taxRatePercent: number;
+};
+
 export function CheckoutForm({
   isSignedIn,
   userEmail,
   paymentAccounts,
+  minLeadDays = 0,
+  maxLeadDays = 30,
 }: {
   isSignedIn: boolean;
   userEmail: string | null;
   paymentAccounts: PaymentAccountPublic[];
+  minLeadDays?: number;
+  maxLeadDays?: number;
 }) {
   const router = useRouter();
   const { lines, clear } = useCart();
@@ -55,6 +67,10 @@ export function CheckoutForm({
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [city, setCity] = useState("");
+  const [area, setArea] = useState("");
+  const [quote, setQuote] = useState<CheckoutQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
 
   const syncEmail = isSignedIn ? userEmail : guestEmail;
   const selectedAccount = paymentAccounts.find((a) => a.slug === paymentMethod);
@@ -77,6 +93,45 @@ export function CheckoutForm({
     onError: (error: Error) => setServerError(error.message),
   });
 
+  const subtotal = cartSubtotal(lines);
+  const discount = appliedCoupon?.discount ?? 0;
+
+  useEffect(() => {
+    const trimmedCity = city.trim();
+    if (!trimmedCity) {
+      setQuote(null);
+      setQuoteLoading(false);
+      return;
+    }
+
+    const timer = window.setTimeout(async () => {
+      setQuoteLoading(true);
+      try {
+        const params = new URLSearchParams({
+          city: trimmedCity,
+          subtotal: String(subtotal),
+          discount: String(discount),
+        });
+        const trimmedArea = area.trim();
+        if (trimmedArea) params.set("area", trimmedArea);
+
+        const res = await fetch(`/api/checkout/quote?${params}`);
+        if (!res.ok) {
+          setQuote(null);
+          return;
+        }
+        const data = (await res.json()) as CheckoutQuote;
+        setQuote(data);
+      } catch {
+        setQuote(null);
+      } finally {
+        setQuoteLoading(false);
+      }
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [city, area, subtotal, discount]);
+
   if (!hydrated) {
     return <div className="mt-8 h-60 animate-pulse rounded-petal bg-stone/50" />;
   }
@@ -97,9 +152,9 @@ export function CheckoutForm({
     );
   }
 
-  const subtotal = cartSubtotal(lines);
-  const discount = appliedCoupon?.discount ?? 0;
-  const total = Math.max(0, subtotal - discount) + DELIVERY_FEE;
+  const fallbackTotal = Math.max(0, subtotal - discount) + DEFAULT_DELIVERY_FEE;
+  const displayTotal = quote?.total ?? fallbackTotal;
+  const displayDeliveryFee = quote?.deliveryFee ?? DEFAULT_DELIVERY_FEE;
 
   async function applyCoupon() {
     setCouponError(null);
@@ -194,7 +249,9 @@ export function CheckoutForm({
               </p>
             ) : (
               <div className="mt-4">
-                <Label htmlFor="guestEmail">Email</Label>
+                <Label htmlFor="guestEmail" required>
+                  Email
+                </Label>
                 <Input
                   id="guestEmail"
                   name="guestEmail"
@@ -227,19 +284,31 @@ export function CheckoutForm({
               Flowers are prepared fresh for your chosen slot.
             </p>
             <div className="mt-4">
-              <Label htmlFor="deliveryDate">Delivery date</Label>
+              <Label htmlFor="deliveryDate" required>
+                Delivery date
+              </Label>
               <Input
                 id="deliveryDate"
                 name="deliveryDate"
                 type="date"
-                min={toDateInputValue(earliestDeliveryDate())}
-                max={toDateInputValue(latestDeliveryDate())}
-                defaultValue={toDateInputValue(earliestDeliveryDate())}
+                min={toDateInputValue(earliestDeliveryDate(undefined, minLeadDays))}
+                max={toDateInputValue(latestDeliveryDate(undefined, maxLeadDays))}
+                defaultValue={toDateInputValue(
+                  earliestDeliveryDate(undefined, minLeadDays),
+                )}
               />
               <FieldError message={errors.deliveryDate} />
             </div>
             <fieldset className="mt-4">
-              <legend className="text-sm font-medium">Time slot</legend>
+              <legend className="text-sm font-medium">
+                Time slot
+                <span
+                  className="ml-0.5 font-semibold text-burgundy"
+                  aria-hidden="true"
+                >
+                  *
+                </span>
+              </legend>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 {DELIVERY_TIME_SLOTS.map((slot, i) => (
                   <label
@@ -266,7 +335,9 @@ export function CheckoutForm({
             <h2 className="font-display text-xl text-burgundy">Deliver to</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="recipientName">Recipient name</Label>
+                <Label htmlFor="recipientName" required>
+                  Recipient name
+                </Label>
                 <Input
                   id="recipientName"
                   name="recipientName"
@@ -275,7 +346,9 @@ export function CheckoutForm({
                 <FieldError message={errors.recipientName} />
               </div>
               <div>
-                <Label htmlFor="recipientPhone">Recipient phone</Label>
+                <Label htmlFor="recipientPhone" required>
+                  Recipient phone
+                </Label>
                 <Input
                   id="recipientPhone"
                   name="recipientPhone"
@@ -286,7 +359,9 @@ export function CheckoutForm({
                 <FieldError message={errors.recipientPhone} />
               </div>
               <div className="sm:col-span-2">
-                <Label htmlFor="addressLine1">Street address</Label>
+                <Label htmlFor="addressLine1" required>
+                  Street address
+                </Label>
                 <Input
                   id="addressLine1"
                   name="addressLine1"
@@ -305,13 +380,26 @@ export function CheckoutForm({
                 />
               </div>
               <div>
-                <Label htmlFor="city">City</Label>
-                <Input id="city" name="city" autoComplete="address-level2" />
+                <Label htmlFor="city" required>
+                  City
+                </Label>
+                <Input
+                  id="city"
+                  name="city"
+                  autoComplete="address-level2"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
                 <FieldError message={errors.city} />
               </div>
               <div>
                 <Label htmlFor="area">Area / neighbourhood (optional)</Label>
-                <Input id="area" name="area" />
+                <Input
+                  id="area"
+                  name="area"
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
+                />
               </div>
               <div>
                 <Label htmlFor="postalCode">Postal code (optional)</Label>
@@ -391,7 +479,8 @@ export function CheckoutForm({
                     <span className="flex items-center gap-2 font-medium">
                       <PaymentMethodIcon
                         iconKey={account.iconKey}
-                        className="size-7"
+                        variant="mark"
+                        className="size-7 shrink-0"
                       />
                       {account.name}
                     </span>
@@ -428,7 +517,9 @@ export function CheckoutForm({
                   )}
                 </dl>
                 <div>
-                  <Label htmlFor="transactionId">Transaction ID (TID)</Label>
+                  <Label htmlFor="transactionId" required>
+                    Transaction ID (TID)
+                  </Label>
                   <Input
                     id="transactionId"
                     value={transactionId}
@@ -439,48 +530,64 @@ export function CheckoutForm({
                   <FieldError message={errors.transactionId} />
                 </div>
                 <div>
-                  <Label htmlFor="receipt">Payment receipt screenshot</Label>
-                  <input
-                    id="receipt"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="mt-1.5 block w-full text-sm"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setUploadBusy(true);
-                      setUploadError(null);
-                      try {
-                        const fd = new FormData();
-                        fd.set("file", file);
-                        fd.set("folder", "receipts");
-                        const res = await fetch("/api/uploads", {
-                          method: "POST",
-                          body: fd,
-                        });
-                        const data = await res.json();
-                        if (!res.ok) {
-                          throw new Error(data.error ?? "Upload failed");
+                  <Label htmlFor="receipt" required>
+                    Payment receipt screenshot
+                  </Label>
+                  <label
+                    htmlFor="receipt"
+                    className={`mt-1.5 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors ${
+                      receiptUrl
+                        ? "border-sage bg-sage/5"
+                        : "border-burgundy/40 bg-white hover:border-burgundy hover:bg-blush/20"
+                    }`}
+                  >
+                    <span className="text-sm font-bold text-burgundy">
+                      {uploadBusy
+                        ? "Uploading…"
+                        : receiptUrl
+                          ? "Receipt attached — tap to replace"
+                          : "Choose file / Upload receipt"}
+                    </span>
+                    <span className="mt-1 text-xs text-ink/55">
+                      JPEG, PNG, or WebP · under 5 MB
+                    </span>
+                    <input
+                      id="receipt"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="sr-only"
+                      disabled={uploadBusy}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setUploadBusy(true);
+                        setUploadError(null);
+                        try {
+                          const fd = new FormData();
+                          fd.set("file", file);
+                          fd.set("folder", "receipts");
+                          const res = await fetch("/api/uploads", {
+                            method: "POST",
+                            body: fd,
+                          });
+                          const data = await res.json();
+                          if (!res.ok) {
+                            throw new Error(data.error ?? "Upload failed");
+                          }
+                          setReceiptUrl(data.url as string);
+                        } catch (err) {
+                          setReceiptUrl(null);
+                          setUploadError(
+                            err instanceof Error
+                              ? err.message
+                              : "Upload failed",
+                          );
+                        } finally {
+                          setUploadBusy(false);
                         }
-                        setReceiptUrl(data.url as string);
-                      } catch (err) {
-                        setReceiptUrl(null);
-                        setUploadError(
-                          err instanceof Error
-                            ? err.message
-                            : "Upload failed",
-                        );
-                      } finally {
-                        setUploadBusy(false);
-                      }
-                    }}
-                  />
-                  {uploadBusy && (
-                    <p className="mt-1 text-sm text-ink/60">Uploading…</p>
-                  )}
-                  {receiptUrl && (
-                    <p className="mt-1 text-sm text-sage">Receipt attached.</p>
-                  )}
+                      }}
+                    />
+                  </label>
                   <FieldError
                     message={uploadError ?? errors.receiptImageUrl}
                   />
@@ -566,12 +673,47 @@ export function CheckoutForm({
               </div>
             )}
             <div className="flex justify-between">
-              <dt className="text-ink/70">Delivery</dt>
-              <dd>{formatPrice(DELIVERY_FEE)}</dd>
+              <dt className="text-ink/70">
+                Delivery
+                {quote?.deliveryZoneName ? (
+                  <span className="block text-xs text-ink/50">
+                    {quote.deliveryZoneName}
+                  </span>
+                ) : null}
+              </dt>
+              <dd>
+                {quoteLoading && city.trim() ? (
+                  <span className="text-ink/50">…</span>
+                ) : (
+                  formatPrice(displayDeliveryFee)
+                )}
+              </dd>
             </div>
+            {quote && quote.taxAmount > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-ink/70">
+                  Tax
+                  {quote.taxRatePercent > 0 ? (
+                    <span className="text-ink/50"> ({quote.taxRatePercent}%)</span>
+                  ) : null}
+                </dt>
+                <dd>{formatPrice(quote.taxAmount)}</dd>
+              </div>
+            )}
+            {!city.trim() && (
+              <p className="text-xs text-ink/50">
+                Enter city to calculate delivery &amp; tax
+              </p>
+            )}
             <div className="flex justify-between border-t border-stone pt-3 text-base font-semibold">
               <dt>Total</dt>
-              <dd>{formatPrice(total)}</dd>
+              <dd>
+                {quoteLoading && city.trim() ? (
+                  <span className="text-ink/50">…</span>
+                ) : (
+                  formatPrice(displayTotal)
+                )}
+              </dd>
             </div>
           </dl>
 

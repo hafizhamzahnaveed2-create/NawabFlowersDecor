@@ -5,6 +5,7 @@ import {
   listLinkableRawMaterials,
 } from "@/lib/repositories/builder";
 import { BuilderComponentForm } from "../component-form";
+import { requirePagePermission } from "../../require-page-permission";
 
 export const metadata = { title: "Edit builder component · Admin" };
 
@@ -13,6 +14,7 @@ export default async function EditBuilderComponentPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requirePagePermission("builder.write");
   const { id } = await params;
   const [component, linkable] = await Promise.all([
     getBuilderComponent(id),

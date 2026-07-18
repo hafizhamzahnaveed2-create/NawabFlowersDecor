@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { listPendingReviews } from "@/lib/repositories/reviews";
 import { ReviewModerationActions } from "./review-actions";
+import { requirePagePermission } from "../require-page-permission";
 
 export const metadata = { title: "Reviews · Admin" };
 
 export default async function AdminReviewsPage() {
+  await requirePagePermission("reviews.moderate");
   const reviews = await listPendingReviews();
 
   return (

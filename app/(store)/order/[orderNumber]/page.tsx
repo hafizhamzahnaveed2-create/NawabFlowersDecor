@@ -132,6 +132,12 @@ export default async function OrderConfirmationPage({
             <dt className="text-ink/70">Delivery</dt>
             <dd>{formatPrice(order.deliveryFee)}</dd>
           </div>
+          {order.taxAmount > 0 && (
+            <div className="flex justify-between">
+              <dt className="text-ink/70">Tax</dt>
+              <dd>{formatPrice(order.taxAmount)}</dd>
+            </div>
+          )}
           <div className="flex justify-between border-t border-stone pt-3 text-base font-semibold">
             <dt>Total — {order.paymentMethod === "cod" ? "pay on delivery" : "paid"}</dt>
             <dd>{formatPrice(order.total)}</dd>

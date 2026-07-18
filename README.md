@@ -27,7 +27,19 @@ npm run dev
 ```
 
 The seed creates an admin account from `SEED_ADMIN_EMAIL` /
-`SEED_ADMIN_PASSWORD`. Sign in at `/login`; change the password after first use.
+`SEED_ADMIN_PASSWORD`, plus two staff accounts (password from
+`SEED_STAFF_PASSWORD`, or `SEED_ADMIN_PASSWORD` if unset). Sign in at
+`/login`; change passwords after first use.
+
+**Seeded accounts**
+
+| Email | Role |
+| --- | --- |
+| `admin@nawabflowers.local` | Full admin |
+| `catalog@nawabflowers.local` | Catalog Manager |
+| `orders@nawabflowers.local` | Order Fulfillment |
+
+Password: `SEED_ADMIN_PASSWORD` (admin) / `SEED_STAFF_PASSWORD` (staff).
 
 ## Project structure
 
@@ -78,9 +90,9 @@ Phase 6 (content & marketing: CMS slides/banners/FAQ/policies/blog,
 promo popup, flash-sale countdown) — **done**.
 Phase 7 (analytics & reporting: KPIs, funnel, retention, CSV exports,
 Neon views, lightweight event tracking) — **done**.
-Payments & contact settings (WhatsApp float, manual payment accounts,
-social links, receipt uploads) — **done**.
-Next: Phase 8 enterprise hardening, then security/CI, optional AI.
+Phase 8a (enterprise hardening: RBAC, shipping zones & tax, feature flags,
+maintenance mode, activity log) — **done**.
+Next: Phase 8b (i18n, display-only multi-currency, branches), then security/CI.
 
 ## Admin
 
@@ -93,7 +105,8 @@ Sign in with the seeded admin account, then open `/admin`:
 - **Coupons** — create and manage promo codes
 - **Reviews** — moderate product reviews before they go live
 - **Payments** — JazzCash / EasyPaisa / bank accounts for manual checkout
-- **Settings** — WhatsApp number and social links
+- **Settings** — WhatsApp number, social links, maintenance mode, feature flags
+- **Shipping & tax** — delivery zones and tax rules (checkout quotes by city)
 - **Content** — homepage hero/announcement, banners, popup, FAQs, policies, journal
 - **Builder** — manage stems/greenery/wrap/ribbon/vase options for Build-Your-Own
 
@@ -109,3 +122,33 @@ Analytics lives at `/admin/analytics` (staff only). CSV exports:
 
 Receipt images upload via `/api/uploads` — Vercel Blob when
 `BLOB_READ_WRITE_TOKEN` is set, otherwise `public/uploads/` in local dev.
+
+Customers can create an account at `/register` (linked from `/login`).
+
+## Deploy (Vercel + Neon)
+
+This is a single Next.js app — UI and API routes ship together. Neon is the
+database, not a separate backend. You do **not** need Railway or a split
+frontend/backend repo for launch.
+
+1. Push the repo to GitHub.
+2. In [Vercel](https://vercel.com), import the project.
+3. Set environment variables (from `.env.example`):
+   - `DATABASE_URL` — Neon **pooled** connection string
+   - `DIRECT_URL` — Neon **direct** connection string (migrations)
+   - `AUTH_SECRET` — `npx auth secret`
+   - `AUTH_URL` — your production URL, e.g. `https://your-app.vercel.app`
+   - `BLOB_READ_WRITE_TOKEN` — recommended for product/receipt uploads
+4. Build command (Vercel project settings):
+
+```bash
+npx prisma migrate deploy && next build
+```
+
+5. Deploy, then open the production URL and verify `/login`, `/register`,
+   checkout, and `/admin`.
+
+Staff and admin accounts are seeded locally; for production, either run
+`npm run db:seed` once against the production Neon branch or create staff
+from `/admin/staff` after the first admin exists. Rotate the seed password
+immediately after first use.

@@ -1,12 +1,13 @@
 import { prisma } from "@/lib/db";
 import type { ContentBlockFormInput } from "@/lib/validation/admin";
 import type { CmsBlockInput } from "@/lib/validation/cms";
-import type { ContentBlockKind, Prisma } from "@/lib/generated/prisma/client";
+import { Prisma, type ContentBlockKind } from "@/lib/generated/prisma/client";
 import { logActivity } from "@/lib/repositories/admin/activity";
 
 const LEGACY_KINDS: Record<ContentBlockFormInput["key"], ContentBlockKind> = {
   "home.hero": "HERO_SLIDE",
   "announcement.main": "ANNOUNCEMENT",
+  "announcement.ticker": "ANNOUNCEMENT",
 };
 
 export type EditableBlockKey = ContentBlockFormInput["key"];
@@ -106,11 +107,23 @@ export async function getBlocksForAdmin() {
       body: true,
       imageUrl: true,
       linkUrl: true,
+      data: true,
       isPublished: true,
       updatedAt: true,
     },
   });
-  return new Map(blocks.map((b) => [b.key, b]));
+  return new Map(
+    blocks.map((b) => [
+      b.key,
+      {
+        ...b,
+        data:
+          b.data && typeof b.data === "object" && !Array.isArray(b.data)
+            ? (b.data as Record<string, unknown>)
+            : null,
+      },
+    ]),
+  );
 }
 
 export async function listBlocksByKindForAdmin(kind: ContentBlockKind) {
@@ -129,6 +142,27 @@ export async function listAllBlocksForAdmin() {
 }
 
 export async function upsertContentBlock(input: ContentBlockFormInput) {
+  const existing = await prisma.contentBlock.findUnique({
+    where: { key: input.key },
+    select: { data: true },
+  });
+  const prev =
+    existing?.data &&
+    typeof existing.data === "object" &&
+    !Array.isArray(existing.data)
+      ? (existing.data as Record<string, unknown>)
+      : {};
+  const data: Record<string, unknown> = { ...prev };
+  if (input.videoUrl) {
+    data.videoUrl = input.videoUrl;
+  } else {
+    delete data.videoUrl;
+  }
+  const dataValue =
+    Object.keys(data).length > 0
+      ? (data as Prisma.InputJsonValue)
+      : Prisma.JsonNull;
+
   return prisma.contentBlock.upsert({
     where: { key: input.key },
     update: {
@@ -137,6 +171,7 @@ export async function upsertContentBlock(input: ContentBlockFormInput) {
       imageUrl: input.imageUrl,
       linkUrl: input.linkUrl,
       isPublished: input.isPublished,
+      data: dataValue,
     },
     create: {
       key: input.key,
@@ -146,6 +181,7 @@ export async function upsertContentBlock(input: ContentBlockFormInput) {
       imageUrl: input.imageUrl,
       linkUrl: input.linkUrl,
       isPublished: input.isPublished,
+      data: dataValue === Prisma.JsonNull ? undefined : dataValue,
     },
   });
 }
@@ -190,7 +226,10 @@ export async function updateCmsBlock(
       linkUrl: input.linkUrl ?? null,
       sortOrder: input.sortOrder,
       isPublished: input.isPublished,
-      data: (input.data ?? undefined) as Prisma.InputJsonValue | undefined,
+      data:
+        input.data === null
+          ? Prisma.JsonNull
+          : ((input.data ?? undefined) as Prisma.InputJsonValue | undefined),
     },
   });
   await logActivity(userId, "content.update", "ContentBlock", row.id, {

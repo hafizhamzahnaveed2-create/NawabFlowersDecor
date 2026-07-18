@@ -40,6 +40,9 @@ export default async function AccountPage() {
     getLoyaltyPoints(session.user.id),
   ]);
 
+  const isStaff =
+    session.user.role === "ADMIN" || session.user.role === "STAFF";
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -63,6 +66,21 @@ export default async function AccountPage() {
           </button>
         </form>
       </div>
+
+      {isStaff && (
+        <Link
+          href="/admin"
+          className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-petal bg-burgundy px-5 py-4 text-ivory transition-colors hover:bg-burgundy-deep"
+        >
+          <div>
+            <p className="font-display text-xl">Shop admin</p>
+            <p className="mt-0.5 text-sm text-ivory/75">
+              Products, orders, settings, and the rest of the shop tools.
+            </p>
+          </div>
+          <span className="text-sm font-medium">Open dashboard →</span>
+        </Link>
+      )}
 
       <div className="mt-8 rounded-petal border border-stone bg-white px-5 py-4">
         <p className="text-sm uppercase tracking-wider text-sage">

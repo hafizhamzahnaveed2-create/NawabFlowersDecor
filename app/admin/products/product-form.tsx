@@ -18,7 +18,7 @@ type VariantRow = { id?: string; name: string; price: string; stock: string };
 export type ProductFormValues = {
   id?: string;
   name: string;
-  type: "BOUQUET" | "RAW_MATERIAL" | "ADDON";
+  type: "BOUQUET" | "RAW_MATERIAL" | "ADDON" | "SERVICE";
   description: string;
   categoryId: string;
   subCategoryId: string | null;
@@ -70,6 +70,8 @@ export function ProductForm({
   const [categoryId, setCategoryId] = useState(values.categoryId);
   const [images, setImages] = useState<ImageRow[]>(values.images);
   const [newImageUrl, setNewImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [variants, setVariants] = useState<VariantRow[]>(
     values.variants.map((v) => ({
       id: v.id,
@@ -80,6 +82,29 @@ export function ProductForm({
   );
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [serverError, setServerError] = useState<string | null>(null);
+
+  async function handlePhotoUpload(fileList: FileList | null) {
+    if (!fileList?.length) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      for (const file of Array.from(fileList)) {
+        const fd = new FormData();
+        fd.set("file", file);
+        fd.set("folder", "products");
+        const res = await fetch("/api/uploads", { method: "POST", body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error ?? "Could not upload that photo");
+        }
+        setImages((arr) => [...arr, { url: data.url as string, alt: "" }]);
+      }
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const subCategories =
     categories.find((c) => c.id === categoryId)?.subCategories ?? [];
@@ -172,7 +197,7 @@ export function ProductForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="mt-6 max-w-3xl space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="mt-6 max-w-3xl space-y-6 pb-28">
       {/* Basics */}
       <section className="rounded-petal border border-stone bg-white p-6">
         <h2 className="font-display text-xl text-burgundy">The basics</h2>
@@ -193,7 +218,15 @@ export function ProductForm({
               <option value="BOUQUET">Bouquet</option>
               <option value="RAW_MATERIAL">Raw material (stem, wrap, vase…)</option>
               <option value="ADDON">Gift add-on</option>
+              <option value="SERVICE">Decoration / event service</option>
             </select>
+            <p className="mt-1.5 text-xs text-ink/50">
+              Need a new category? Manage them under{" "}
+              <a href="/admin/categories" className="text-sage underline-offset-2 hover:underline">
+                Categories
+              </a>
+              .
+            </p>
           </div>
           <div>
             <Label htmlFor="sku">SKU (optional)</Label>
@@ -312,9 +345,35 @@ export function ProductForm({
       <section className="rounded-petal border border-stone bg-white p-6">
         <h2 className="font-display text-xl text-burgundy">Photos</h2>
         <p className="mt-1 text-sm text-ink/60">
-          Paste image URLs for now — the first photo is the main one. Use the
-          arrows to reorder.
+          Upload photos from your phone or computer. The first photo is the main
+          shop image — use the arrows to reorder.
         </p>
+
+        <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-stone bg-ivory/60 px-4 py-8 text-center transition-colors hover:border-burgundy/40 hover:bg-blush/20">
+          <span className="font-semibold text-burgundy">
+            {uploading ? "Uploading…" : "Choose photo to upload"}
+          </span>
+          <span className="mt-1 text-sm text-ink/55">
+            JPEG, PNG, or WebP · under 5 MB
+          </span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
+            disabled={uploading}
+            className="sr-only"
+            onChange={(e) => {
+              void handlePhotoUpload(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {uploadError && (
+          <p role="alert" className="mt-2 text-sm text-burgundy">
+            {uploadError}
+          </p>
+        )}
+
         {images.length > 0 && (
           <ul className="mt-4 space-y-2">
             {images.map((img, index) => (
@@ -322,11 +381,13 @@ export function ProductForm({
                 key={`${img.url}-${index}`}
                 className="flex items-center gap-3 rounded-lg border border-stone p-2"
               >
-                <span className="relative block h-12 w-10 shrink-0 overflow-hidden rounded bg-stone/40">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-entered URL, may not be allowlisted for next/image */}
+                <span className="relative block h-14 w-12 shrink-0 overflow-hidden rounded bg-stone/40">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-entered URL */}
                   <img src={img.url} alt="" className="h-full w-full object-cover" />
                 </span>
-                <span className="min-w-0 flex-1 truncate text-sm">{img.url}</span>
+                <span className="min-w-0 flex-1 truncate text-sm text-ink/70">
+                  Photo {index + 1}
+                </span>
                 {index === 0 && (
                   <span className="rounded-full bg-blush px-2 py-0.5 text-xs text-burgundy-deep">
                     Main
@@ -343,7 +404,7 @@ export function ProductForm({
                       return next;
                     })
                   }
-                  className="p-1 text-ink/50 hover:text-burgundy disabled:opacity-30"
+                  className="rounded border border-stone px-2 py-1 text-sm hover:border-burgundy disabled:opacity-30"
                 >
                   ↑
                 </button>
@@ -358,7 +419,7 @@ export function ProductForm({
                       return next;
                     })
                   }
-                  className="p-1 text-ink/50 hover:text-burgundy disabled:opacity-30"
+                  className="rounded border border-stone px-2 py-1 text-sm hover:border-burgundy disabled:opacity-30"
                 >
                   ↓
                 </button>
@@ -366,35 +427,44 @@ export function ProductForm({
                   type="button"
                   aria-label="Remove photo"
                   onClick={() => setImages((arr) => arr.filter((_, i) => i !== index))}
-                  className="p-1 text-ink/50 hover:text-burgundy"
+                  className="rounded border border-burgundy/30 px-2 py-1 text-sm text-burgundy hover:bg-burgundy/5"
                 >
-                  ✕
+                  Remove
                 </button>
               </li>
             ))}
           </ul>
         )}
-        <div className="mt-3 flex gap-2">
-          <Input
-            value={newImageUrl}
-            onChange={(e) => setNewImageUrl(e.target.value)}
-            placeholder="https://…"
-            aria-label="New photo URL"
-            className="mt-0"
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              if (newImageUrl.trim()) {
-                setImages((arr) => [...arr, { url: newImageUrl.trim(), alt: "" }]);
-                setNewImageUrl("");
-              }
-            }}
-          >
-            Add photo
-          </Button>
-        </div>
+
+        <details className="mt-4 text-sm">
+          <summary className="cursor-pointer font-medium text-ink/70 hover:text-burgundy">
+            Or paste an image link instead
+          </summary>
+          <div className="mt-2 flex gap-2">
+            <Input
+              value={newImageUrl}
+              onChange={(e) => setNewImageUrl(e.target.value)}
+              placeholder="https://…"
+              aria-label="New photo URL"
+              className="mt-0"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                if (newImageUrl.trim()) {
+                  setImages((arr) => [
+                    ...arr,
+                    { url: newImageUrl.trim(), alt: "" },
+                  ]);
+                  setNewImageUrl("");
+                }
+              }}
+            >
+              Add link
+            </Button>
+          </div>
+        </details>
       </section>
 
       {/* Variants */}
@@ -511,17 +581,17 @@ export function ProductForm({
         </p>
       )}
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex gap-3">
-          <Button type="submit" disabled={save.isPending}>
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-petal border border-stone bg-white p-4">
+        <div className="flex flex-wrap gap-3">
+          <Button type="submit" disabled={save.isPending || uploading} className="px-6 py-3 text-base">
             {save.isPending
               ? "Saving…"
               : isEdit
                 ? "Save changes"
-                : "Publish product"}
+                : "Publish product to shop"}
           </Button>
-          <Button type="button" variant="ghost" onClick={() => router.back()}>
-            Cancel
+          <Button type="button" variant="ghost" onClick={() => router.push("/admin/products")}>
+            Back to products
           </Button>
         </div>
         {isEdit && (
@@ -530,7 +600,11 @@ export function ProductForm({
             variant="secondary"
             disabled={remove.isPending}
             onClick={() => {
-              if (confirm("Delete this product permanently? Past orders keep their records.")) {
+              if (
+                confirm(
+                  "Delete this product permanently?\n\nPast orders keep their records. This cannot be undone.",
+                )
+              ) {
                 remove.mutate();
               }
             }}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useHydrated } from "@/lib/use-hydrated";
 
 const STORAGE_KEY = "nawab-wa-btn-pos";
 const SIZE = 52;
@@ -39,23 +40,22 @@ function readStoredPos(): Pos {
   return clamp(defaultPos());
 }
 
-const emptySubscribe = () => () => {};
-
 export function WhatsAppFloat({ number }: { number: string | null }) {
-  const stored = useSyncExternalStore(
-    emptySubscribe,
-    readStoredPos,
-    () => null as Pos | null,
-  );
-  const [dragPos, setDragPos] = useState<Pos | null>(null);
-  const pos = dragPos ?? stored;
+  const hydrated = useHydrated();
+  const [pos, setPos] = useState<Pos | null>(null);
   const dragging = useRef(false);
   const moved = useRef(false);
   const origin = useRef({ x: 0, y: 0, px: 0, py: 0 });
 
   useEffect(() => {
+    if (!hydrated) return;
+    setPos(readStoredPos());
+  }, [hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
     function onResize() {
-      setDragPos((p) => {
+      setPos((p) => {
         const base = p ?? readStoredPos();
         const next = clamp(base);
         try {
@@ -68,7 +68,7 @@ export function WhatsAppFloat({ number }: { number: string | null }) {
     }
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, []);
+  }, [hydrated]);
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -91,7 +91,7 @@ export function WhatsAppFloat({ number }: { number: string | null }) {
     const dx = e.clientX - origin.current.x;
     const dy = e.clientY - origin.current.y;
     if (Math.abs(dx) + Math.abs(dy) > 4) moved.current = true;
-    setDragPos(
+    setPos(
       clamp({
         x: origin.current.px + dx,
         y: origin.current.py + dy,
@@ -102,7 +102,7 @@ export function WhatsAppFloat({ number }: { number: string | null }) {
   const onPointerUp = useCallback(() => {
     if (!dragging.current) return;
     dragging.current = false;
-    setDragPos((p) => {
+    setPos((p) => {
       if (!p) return p;
       const next = clamp(p);
       try {

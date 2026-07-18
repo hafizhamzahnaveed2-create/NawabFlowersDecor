@@ -5,15 +5,29 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/field";
+import { MediaUrlField } from "@/components/admin/media-url-field";
 
-type FieldName = "title" | "body" | "imageUrl" | "linkUrl";
+type FieldName = "title" | "body" | "imageUrl" | "linkUrl" | "videoUrl";
 
 const fieldLabels: Record<FieldName, string> = {
   title: "Headline",
   body: "Supporting line",
-  imageUrl: "Photo URL",
-  linkUrl: "Link (where clicking goes, optional)",
+  imageUrl: "Photo",
+  videoUrl: "Video (optional)",
+  linkUrl: "Click link (Build your own button / hero CTA)",
 };
+
+const barLabels: Partial<Record<FieldName, string>> = {
+  title: "Announcement message",
+  linkUrl: "Click link (optional)",
+};
+
+const tickerLabels: Partial<Record<FieldName, string>> = {
+  title: "Ticker message",
+  linkUrl: "Click link (optional — whole bar is clickable)",
+};
+
+type LegacyBlockKey = "home.hero" | "announcement.main" | "announcement.ticker";
 
 export function ContentBlockForm({
   blockKey,
@@ -22,7 +36,7 @@ export function ContentBlockForm({
   fields,
   initial,
 }: {
-  blockKey: "home.hero" | "announcement.main";
+  blockKey: LegacyBlockKey;
   heading: string;
   description: string;
   fields: FieldName[];
@@ -30,6 +44,7 @@ export function ContentBlockForm({
     title: string;
     body: string;
     imageUrl: string;
+    videoUrl: string;
     linkUrl: string;
     isPublished: boolean;
   };
@@ -48,6 +63,7 @@ export function ContentBlockForm({
           title: String(form.get("title") ?? ""),
           body: String(form.get("body") ?? ""),
           imageUrl: String(form.get("imageUrl") ?? ""),
+          videoUrl: String(form.get("videoUrl") ?? ""),
           linkUrl: String(form.get("linkUrl") ?? ""),
           isPublished: form.get("isPublished") === "on",
         }),
@@ -64,6 +80,12 @@ export function ContentBlockForm({
     onError: (e: Error) => setError(e.message),
   });
 
+  const labels = {
+    ...fieldLabels,
+    ...(blockKey === "announcement.main" ? barLabels : {}),
+    ...(blockKey === "announcement.ticker" ? tickerLabels : {}),
+  };
+
   return (
     <form
       onSubmit={(e) => {
@@ -78,25 +100,57 @@ export function ContentBlockForm({
       <p className="mt-1 text-sm text-ink/60">{description}</p>
 
       <div className="mt-4 space-y-4">
-        {fields.map((field) => (
-          <div key={field}>
-            <Label htmlFor={`${blockKey}-${field}`}>{fieldLabels[field]}</Label>
-            {field === "body" ? (
-              <Textarea
+        {fields.map((field) => {
+          if (field === "imageUrl") {
+            return (
+              <MediaUrlField
+                key={field}
                 id={`${blockKey}-${field}`}
-                name={field}
-                rows={2}
-                defaultValue={initial[field]}
+                name="imageUrl"
+                label={labels.imageUrl}
+                defaultValue={initial.imageUrl}
+                folder="content"
+                kind="image"
+                hint="Paste a URL or upload from your device. Video below takes priority on the homepage when set."
               />
-            ) : (
-              <Input
+            );
+          }
+          if (field === "videoUrl") {
+            return (
+              <MediaUrlField
+                key={field}
                 id={`${blockKey}-${field}`}
-                name={field}
-                defaultValue={initial[field]}
+                name="videoUrl"
+                label={labels.videoUrl}
+                defaultValue={initial.videoUrl}
+                folder="content/videos"
+                kind="video"
+                hint="MP4 or WebM under 40 MB, or a direct video URL. Plays on the homepage hero."
               />
-            )}
-          </div>
-        ))}
+            );
+          }
+          return (
+            <div key={field}>
+              <Label htmlFor={`${blockKey}-${field}`}>
+                {labels[field]}
+              </Label>
+              {field === "body" ? (
+                <Textarea
+                  id={`${blockKey}-${field}`}
+                  name={field}
+                  rows={2}
+                  defaultValue={initial[field]}
+                />
+              ) : (
+                <Input
+                  id={`${blockKey}-${field}`}
+                  name={field}
+                  defaultValue={initial[field]}
+                />
+              )}
+            </div>
+          );
+        })}
         <label className="flex items-center gap-2.5">
           <input
             type="checkbox"
@@ -104,7 +158,12 @@ export function ContentBlockForm({
             defaultChecked={initial.isPublished}
             className="size-4 accent-burgundy"
           />
-          <span>Show on the site</span>
+          <span>
+            {blockKey === "announcement.main" ||
+            blockKey === "announcement.ticker"
+              ? "Enable on the shop"
+              : "Show on the site"}
+          </span>
         </label>
       </div>
 
@@ -112,7 +171,7 @@ export function ContentBlockForm({
         <Button type="submit" size="sm" disabled={save.isPending}>
           {save.isPending ? "Saving…" : "Save"}
         </Button>
-        {message && <p className="text-sm text-sage">{message}</p>}
+        {message && <p className="mt-0 text-sm text-sage">{message}</p>}
         {error && (
           <p role="alert" className="text-sm text-burgundy">
             {error}

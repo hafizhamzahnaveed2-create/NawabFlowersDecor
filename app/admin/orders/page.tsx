@@ -2,6 +2,8 @@ import Link from "next/link";
 import { listAdminOrders } from "@/lib/repositories/admin/orders";
 import { formatPrice } from "@/lib/money";
 import type { OrderStatus } from "@/lib/generated/prisma/client";
+import { OrderRowActions } from "./order-row-actions";
+import { requirePagePermission } from "../require-page-permission";
 
 export const metadata = { title: "Orders · Admin" };
 
@@ -35,6 +37,7 @@ export default async function AdminOrdersPage({
 }: {
   searchParams: Promise<{ status?: string; q?: string; page?: string }>;
 }) {
+  await requirePagePermission("orders.read");
   const sp = await searchParams;
   const status = STATUSES.find((s) => s.value === sp.status)?.value;
   const { orders, total, page, pageCount } = await listAdminOrders({
@@ -50,19 +53,33 @@ export default async function AdminOrdersPage({
     })}`;
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <h1 className="font-display text-3xl text-burgundy">Orders</h1>
-      <p className="mt-1 text-ink/60">
-        {total} order{total === 1 ? "" : "s"}
-        {status ? ` · ${STATUSES.find((s) => s.value === status)?.label}` : ""} —
-        sorted by soonest delivery
-      </p>
+    <div className="mx-auto max-w-6xl">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl text-burgundy">Orders</h1>
+          <p className="mt-1 text-ink/60">
+            {total === 1 ? "1 order" : `${total} orders`}
+            {status
+              ? ` · ${STATUSES.find((s) => s.value === status)?.label}`
+              : ""}{" "}
+            — open any order to confirm or change its status.
+          </p>
+        </div>
+        <Link
+          href="/admin/orders?status=PENDING"
+          className="rounded-lg border border-burgundy/40 bg-blush/50 px-4 py-2.5 text-sm font-semibold text-burgundy-deep hover:bg-blush"
+        >
+          Show pending only
+        </Link>
+      </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <Link
           href={filterHref(undefined)}
           className={`rounded-full px-3.5 py-1.5 text-sm ${
-            !status ? "bg-burgundy text-ivory" : "border border-stone bg-white hover:border-sage"
+            !status
+              ? "bg-burgundy text-ivory"
+              : "border border-stone bg-white hover:border-sage"
           }`}
         >
           All
@@ -100,7 +117,7 @@ export default async function AdminOrdersPage({
         </button>
       </form>
 
-      <div className="mt-5 overflow-hidden rounded-petal border border-stone bg-white">
+      <div className="mt-5 overflow-x-auto rounded-petal border border-stone bg-white">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-stone text-left text-xs uppercase tracking-wider text-ink/50">
@@ -109,6 +126,7 @@ export default async function AdminOrdersPage({
               <th className="px-4 py-3">Recipient</th>
               <th className="px-4 py-3">Total</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone">
@@ -137,13 +155,18 @@ export default async function AdminOrdersPage({
                   {o.recipientName}
                   <span className="block text-xs text-ink/50">{o.city}</span>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">{formatPrice(o.total)}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {formatPrice(o.total)}
+                </td>
                 <td className="px-4 py-3">
                   <span
                     className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[o.status]}`}
                   >
                     {STATUSES.find((s) => s.value === o.status)?.label}
                   </span>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <OrderRowActions orderId={o.id} />
                 </td>
               </tr>
             ))}

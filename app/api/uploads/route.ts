@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { UploadError, uploadImage } from "@/lib/uploads";
+import { UploadError, uploadImage, uploadVideo } from "@/lib/uploads";
 
 /**
- * Public checkout-friendly upload endpoint for receipt screenshots.
+ * Upload endpoint for receipts, product photos, and CMS media.
  * Size/type limited in lib/uploads. Folder defaults to "receipts".
  */
 export async function POST(request: Request) {
@@ -15,9 +15,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "file is required" }, { status: 400 });
   }
   const folder = String(form.get("folder") ?? "receipts");
+  const kind = String(form.get("kind") ?? "image");
 
   try {
-    const result = await uploadImage(file, folder);
+    const result =
+      kind === "video"
+        ? await uploadVideo(file, folder)
+        : await uploadImage(file, folder);
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof UploadError) {

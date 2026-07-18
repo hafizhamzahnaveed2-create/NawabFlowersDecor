@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/db";
 import { effectivePrice } from "@/lib/pricing";
 import {
-  DELIVERY_FEE,
   earliestDeliveryDate,
   latestDeliveryDate,
   toDateInputValue,
 } from "@/lib/delivery";
+import { quoteCheckoutTotals } from "@/lib/delivery-pricing";
 import type { CheckoutInput } from "@/lib/validation/checkout";
 import {
   CouponError,
@@ -15,6 +15,7 @@ import {
   awardLoyaltyPoints,
   markCartRecovered,
 } from "@/lib/repositories/retention";
+import { getDeliveryScheduleSettings } from "@/lib/repositories/settings";
 
 export class CheckoutError extends Error {
   constructor(
@@ -40,12 +41,18 @@ export async function createOrder(
   input: CheckoutInput,
   userId: string | null,
 ) {
-  if (
-    input.deliveryDate < toDateInputValue(earliestDeliveryDate()) ||
-    input.deliveryDate > toDateInputValue(latestDeliveryDate())
-  ) {
+  const schedule = await getDeliveryScheduleSettings();
+  const earliest = toDateInputValue(
+    earliestDeliveryDate(undefined, schedule.minLeadDays),
+  );
+  const latest = toDateInputValue(
+    latestDeliveryDate(undefined, schedule.maxLeadDays),
+  );
+  if (input.deliveryDate < earliest || input.deliveryDate > latest) {
     throw new CheckoutError(
-      "Delivery date must be between tomorrow and 30 days from now",
+      schedule.sameDayDelivery
+        ? `Delivery date must be between today and ${schedule.maxLeadDays} days from now`
+        : `Delivery date must be between tomorrow and ${schedule.maxLeadDays} days from now`,
     );
   }
   const deliveryDate = new Date(`${input.deliveryDate}T00:00:00Z`);
@@ -199,7 +206,15 @@ export async function createOrder(
     }
   }
 
-  const total = Math.max(0, subtotal - discountAmount) + DELIVERY_FEE;
+  const quote = await quoteCheckoutTotals({
+    subtotal,
+    discountAmount,
+    city: input.city,
+    area: input.area,
+  });
+  const deliveryFee = quote.deliveryFee;
+  const taxAmount = quote.taxAmount;
+  const total = quote.total;
 
   let paymentAccountId: string | null = null;
   let paymentMethod = input.paymentMethod;
@@ -306,7 +321,8 @@ export async function createOrder(
         paymentVerificationStatus,
         subtotal,
         discountAmount,
-        deliveryFee: DELIVERY_FEE,
+        deliveryFee,
+        taxAmount,
         total,
         couponId,
         deliveryDate,
@@ -360,6 +376,7 @@ export type OrderSummary = {
   paymentMethod: string | null;
   subtotal: number;
   deliveryFee: number;
+  taxAmount: number;
   total: number;
   deliveryDate: Date;
   deliveryTimeSlot: string;
@@ -413,6 +430,7 @@ export async function getOrderByNumber(
     paymentMethod: order.paymentMethod,
     subtotal: Number(order.subtotal),
     deliveryFee: Number(order.deliveryFee),
+    taxAmount: Number(order.taxAmount),
     total: Number(order.total),
     deliveryDate: order.deliveryDate,
     deliveryTimeSlot: order.deliveryTimeSlot,

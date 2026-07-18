@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireStaff } from "@/lib/auth-helpers";
+import { requirePermission } from "@/lib/auth-helpers";
 import { cmsBlockSchema } from "@/lib/validation/cms";
 import {
   deleteCmsBlock,
@@ -10,7 +10,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireStaff();
+  const session = await requirePermission("content.write");
   if (!session) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
@@ -32,7 +32,7 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireStaff();
+  const session = await requirePermission("content.write");
   if (!session) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }

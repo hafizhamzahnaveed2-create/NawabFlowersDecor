@@ -1,9 +1,11 @@
 import { listCategories } from "@/lib/repositories/categories";
 import { ProductForm } from "../product-form";
+import { requirePagePermission } from "../../require-page-permission";
 
 export const metadata = { title: "Add product · Admin" };
 
 export default async function NewProductPage() {
+  await requirePagePermission("catalog.write");
   const categories = await listCategories();
 
   return (

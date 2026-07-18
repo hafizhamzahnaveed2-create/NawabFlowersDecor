@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { listActiveBuilderComponents } from "@/lib/repositories/builder";
+import { getFeatureFlags } from "@/lib/repositories/settings";
 import { BouquetBuilder } from "@/components/builder/bouquet-builder";
 
 export const metadata: Metadata = {
@@ -11,7 +12,24 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function BuilderPage() {
-  const components = await listActiveBuilderComponents();
+  const [components, flags] = await Promise.all([
+    listActiveBuilderComponents(),
+    getFeatureFlags(),
+  ]);
+
+  if (!flags.builder) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-20 text-center">
+        <h1 className="font-display text-4xl text-burgundy">
+          Build your own bouquet
+        </h1>
+        <p className="mt-4 text-ink/70">
+          The bouquet builder is temporarily unavailable. Browse our
+          ready-made bouquets in the meantime — we&apos;ll be back soon.
+        </p>
+      </div>
+    );
+  }
 
   if (components.length === 0) {
     return (

@@ -19,13 +19,15 @@ export const paymentAccountSchema = z.object({
 export type PaymentAccountInput = z.infer<typeof paymentAccountSchema>;
 
 export const socialLinkSchema = z.object({
-  platform: z.enum([
-    "instagram",
-    "facebook",
-    "tiktok",
-    "youtube",
-    "whatsapp",
-  ]),
+  platform: z
+    .string()
+    .trim()
+    .min(2)
+    .max(40)
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Use lowercase letters, numbers, and dashes (e.g. pinterest)",
+    ),
   url: z.string().trim().url(),
   sortOrder: z.coerce.number().int().min(0).default(0),
   isEnabled: z.boolean().default(false),
@@ -33,12 +35,49 @@ export const socialLinkSchema = z.object({
 
 export type SocialLinkInput = z.infer<typeof socialLinkSchema>;
 
+/** Built-in social networks shown in the admin picker. */
+export const KNOWN_SOCIAL_PLATFORMS = [
+  "instagram",
+  "facebook",
+  "tiktok",
+  "youtube",
+  "whatsapp",
+  "pinterest",
+  "snapchat",
+  "linkedin",
+  "x",
+] as const;
+
 export const whatsappSettingSchema = z.object({
   number: z
     .string()
     .trim()
     .regex(/^[0-9]{10,15}$/, "Digits only, country code included (e.g. 92300…)"),
 });
+
+export const maintenanceSettingSchema = z.object({
+  enabled: z.boolean(),
+  message: z.string().trim().min(1).max(500),
+});
+
+export type MaintenanceSettingInput = z.infer<typeof maintenanceSettingSchema>;
+
+export const featureFlagsSchema = z.object({
+  builder: z.boolean(),
+  reviews: z.boolean(),
+  newsletter: z.boolean(),
+});
+
+export type FeatureFlagsInput = z.infer<typeof featureFlagsSchema>;
+
+export const deliveryScheduleSchema = z.object({
+  /** When true, checkout allows selecting today (min lead days = 0). */
+  sameDayDelivery: z.boolean(),
+  /** How many days ahead customers may book (1–90). */
+  maxLeadDays: z.coerce.number().int().min(1).max(90),
+});
+
+export type DeliveryScheduleInput = z.infer<typeof deliveryScheduleSchema>;
 
 export const paymentVerifySchema = z.object({
   decision: z.enum(["VERIFIED", "REJECTED"]),

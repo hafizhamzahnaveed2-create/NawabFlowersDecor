@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireStaff } from "@/lib/auth-helpers";
+import { requirePermission } from "@/lib/auth-helpers";
 import { contentBlockFormSchema } from "@/lib/validation/admin";
 import { cmsBlockSchema } from "@/lib/validation/cms";
 import {
@@ -10,7 +10,7 @@ import {
 import { logActivity } from "@/lib/repositories/admin/activity";
 
 export async function GET() {
-  const session = await requireStaff();
+  const session = await requirePermission("content.write");
   if (!session) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
@@ -19,7 +19,7 @@ export async function GET() {
 
 /** Legacy fixed-key upsert (announcement / primary hero). */
 export async function PUT(request: Request) {
-  const session = await requireStaff();
+  const session = await requirePermission("content.write");
   if (!session) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
@@ -42,7 +42,7 @@ export async function PUT(request: Request) {
 
 /** Create a new CMS block (FAQ, banner, blog, etc.). */
 export async function POST(request: Request) {
-  const session = await requireStaff();
+  const session = await requirePermission("content.write");
   if (!session) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }

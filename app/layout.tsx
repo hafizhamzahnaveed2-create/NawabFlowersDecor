@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Karla } from "next/font/google";
+import { SITE_NAME } from "@/lib/brand";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -15,8 +16,8 @@ const karla = Karla({
 
 export const metadata: Metadata = {
   title: {
-    default: "Nawab Flowers Decor",
-    template: "%s · Nawab Flowers Decor",
+    default: SITE_NAME,
+    template: `%s · ${SITE_NAME}`,
   },
   description:
     "Fresh flowers, hand-tied bouquets, and build-your-own arrangements — delivered on time, every time.",

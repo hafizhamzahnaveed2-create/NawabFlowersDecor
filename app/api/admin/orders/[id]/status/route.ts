@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireStaff } from "@/lib/auth-helpers";
+import { requirePermission } from "@/lib/auth-helpers";
 import { orderStatusSchema } from "@/lib/validation/admin";
 import { updateOrderStatus } from "@/lib/repositories/admin/orders";
 
@@ -7,7 +7,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireStaff();
+  const session = await requirePermission("orders.fulfill");
   if (!session) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }

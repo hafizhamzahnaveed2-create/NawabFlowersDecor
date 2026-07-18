@@ -2,10 +2,12 @@ import { listCoupons } from "@/lib/repositories/coupons";
 import { formatPrice } from "@/lib/money";
 import { CouponCreateForm } from "./coupon-form";
 import { CouponRowActions } from "./coupon-actions";
+import { requirePagePermission } from "../require-page-permission";
 
 export const metadata = { title: "Coupons · Admin" };
 
 export default async function AdminCouponsPage() {
+  await requirePagePermission("coupons.write");
   const coupons = await listCoupons();
 
   return (

@@ -1,17 +1,16 @@
 import { z } from "zod";
+import { mediaUrlSchema, optionalMediaUrlSchema } from "@/lib/validation/media";
 
 const emptyToNull = (v: unknown) =>
   typeof v === "string" && v.trim() === "" ? null : v;
 
 /** Legacy fixed-key upsert (announcement + primary hero). */
 export const contentBlockFormSchema = z.object({
-  key: z.enum(["home.hero", "announcement.main"]),
+  key: z.enum(["home.hero", "announcement.main", "announcement.ticker"]),
   title: z.string().trim().max(200).optional().or(z.literal("")),
   body: z.string().trim().max(2000).optional().or(z.literal("")),
-  imageUrl: z.preprocess(
-    emptyToNull,
-    z.string().trim().url("Enter a valid image URL").nullable(),
-  ),
+  imageUrl: mediaUrlSchema,
+  videoUrl: optionalMediaUrlSchema,
   linkUrl: z.preprocess(
     emptyToNull,
     z.string().trim().max(300).nullable(),
@@ -47,17 +46,14 @@ export const cmsBlockSchema = z.object({
     ),
   title: z.string().trim().max(200).optional().or(z.literal("")),
   body: z.string().trim().max(20000).optional().or(z.literal("")),
-  imageUrl: z.preprocess(
-    emptyToNull,
-    z.string().trim().url("Enter a valid image URL").nullable().optional(),
-  ),
+  imageUrl: optionalMediaUrlSchema,
   linkUrl: z.preprocess(
     emptyToNull,
     z.string().trim().max(300).nullable().optional(),
   ),
   sortOrder: z.coerce.number().int().min(0).default(0),
   isPublished: z.boolean().default(true),
-  /** Free-form extras: excerpt, ctaLabel, delayMs, etc. */
+  /** Free-form extras: excerpt, ctaLabel, delayMs, videoUrl, etc. */
   data: z.record(z.string(), z.unknown()).optional().nullable(),
 });
 

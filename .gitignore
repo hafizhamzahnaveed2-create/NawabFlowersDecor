@@ -46,3 +46,7 @@ next-env.d.ts
 
 # prisma generated client
 /lib/generated/
+
+# Draft logo explorations (local only)
+logo-options/
+

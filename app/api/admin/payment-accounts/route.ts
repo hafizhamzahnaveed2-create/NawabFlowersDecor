@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireStaff } from "@/lib/auth-helpers";
+import { requirePermission } from "@/lib/auth-helpers";
 import { paymentAccountSchema } from "@/lib/validation/settings";
 import {
   createPaymentAccount,
@@ -7,13 +7,13 @@ import {
 } from "@/lib/repositories/settings";
 
 export async function GET() {
-  const session = await requireStaff();
+  const session = await requirePermission("payments.write");
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   return NextResponse.json({ accounts: await listPaymentAccounts() });
 }
 
 export async function POST(request: Request) {
-  const session = await requireStaff();
+  const session = await requirePermission("payments.write");
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await request.json().catch(() => null);
   const parsed = paymentAccountSchema.safeParse(body);

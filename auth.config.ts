@@ -19,6 +19,7 @@ export const authConfig = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role;
+        session.user.permissions = token.permissions ?? [];
       }
       return session;
     },
@@ -27,7 +28,12 @@ export const authConfig = {
       const user = auth?.user;
 
       if (pathname.startsWith("/admin")) {
-        return user?.role === "ADMIN" || user?.role === "STAFF";
+        if (user?.role !== "ADMIN" && user?.role !== "STAFF") return false;
+        // Empty permissions = inactive staff (or stale session after RBAC rollout).
+        if (Array.isArray(user.permissions) && user.permissions.length === 0) {
+          return false;
+        }
+        return true;
       }
       if (pathname.startsWith("/account")) {
         return !!user;

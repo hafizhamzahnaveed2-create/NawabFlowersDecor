@@ -1,28 +1,39 @@
+import Image from "next/image";
 import Link from "next/link";
 import { NewsletterForm } from "@/components/storefront/newsletter-form";
 import { PaymentMethodsFooter } from "@/components/storefront/payment-methods-footer";
 import { SocialPlatformIcon } from "@/components/storefront/brand-icons";
+import { SITE_LOGO, SITE_NAME } from "@/lib/brand";
+import { listCategories } from "@/lib/repositories/categories";
 import {
   listPaymentAccounts,
   listSocialLinks,
 } from "@/lib/repositories/settings";
 
 export async function Footer() {
-  const [socials, payments] = await Promise.all([
+  const [socials, payments, categories] = await Promise.all([
     listSocialLinks(true),
     listPaymentAccounts(true),
+    listCategories(),
   ]);
 
   return (
     <footer className="mt-16 border-t border-stone bg-white">
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <p className="font-display text-xl text-burgundy">
-            Nawab Flowers Decor
-          </p>
+          <div className="flex items-center gap-3">
+            <Image
+              src={SITE_LOGO}
+              alt=""
+              width={40}
+              height={40}
+              className="rounded-full object-cover ring-1 ring-stone"
+            />
+            <p className="font-display text-xl text-burgundy">{SITE_NAME}</p>
+          </div>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink/60">
-            Fresh stems, hand-tied bouquets, and build-your-own arrangements —
-            delivered on time, every time.
+            Fresh flowers, specialty bouquets, and event decorations — delivered
+            and styled with care.
           </p>
           {socials.length > 0 && (
             <ul className="mt-4 flex flex-wrap gap-3">
@@ -52,27 +63,16 @@ export async function Footer() {
                 Build your own
               </Link>
             </li>
-            <li>
-              <Link href="/category/bouquets" className="hover:text-burgundy">
-                Bouquets
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/category/raw-materials"
-                className="hover:text-burgundy"
-              >
-                Raw Materials
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/category/gift-addons"
-                className="hover:text-burgundy"
-              >
-                Gift Add-ons
-              </Link>
-            </li>
+            {categories.map((category) => (
+              <li key={category.id}>
+                <Link
+                  href={`/category/${category.slug}`}
+                  className="hover:text-burgundy"
+                >
+                  {category.name}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
         <div>
@@ -80,6 +80,11 @@ export async function Footer() {
             Help &amp; more
           </h3>
           <ul className="mt-3 space-y-2 text-sm">
+            <li>
+              <Link href="/contact" className="hover:text-burgundy">
+                Contact us
+              </Link>
+            </li>
             <li>
               <Link href="/faq" className="hover:text-burgundy">
                 FAQ
@@ -111,9 +116,6 @@ export async function Footer() {
               </Link>
             </li>
           </ul>
-          <div className="mt-6">
-            <PaymentMethodsFooter accounts={payments} />
-          </div>
         </div>
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sage">
@@ -125,8 +127,17 @@ export async function Footer() {
           <NewsletterForm />
         </div>
       </div>
+
+      {payments.length > 0 && (
+        <div className="border-t border-stone bg-ivory/60">
+          <div className="mx-auto max-w-6xl px-6 py-5">
+            <PaymentMethodsFooter accounts={payments} />
+          </div>
+        </div>
+      )}
+
       <div className="border-t border-stone py-4 text-center text-xs text-ink/50">
-        © {new Date().getFullYear()} Nawab Flowers Decor
+        © {new Date().getFullYear()} {SITE_NAME}
       </div>
     </footer>
   );

@@ -63,8 +63,45 @@ body {
   outline-offset: 2px;
 }
 
+/* Hide the header/admin logo mark while the welcome splash logo is flying in. */
+html[data-welcome="active"] #site-brand-logo {
+  opacity: 0;
+}
+
+/* Top-of-shop news ticker — continuous right → left scroll. */
+@keyframes announcement-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-25%);
+  }
+}
+
+.announcement-marquee {
+  animation: announcement-scroll 40s linear infinite;
+}
+
+.announcement-track:hover .announcement-marquee {
+  animation-play-state: paused;
+}
+
 /* Respect reduced motion globally; component animations must also check it. */
 @media (prefers-reduced-motion: reduce) {
+  .announcement-marquee {
+    animation: none !important;
+    transform: none !important;
+    width: 100% !important;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+    padding-inline: 1.5rem;
+  }
+
+  .announcement-marquee > [aria-hidden] {
+    display: none;
+  }
+
   *,
   *::before,
   *::after {

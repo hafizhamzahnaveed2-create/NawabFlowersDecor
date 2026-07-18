@@ -1,11 +1,24 @@
 // Small form primitives sharing one visual language across checkout/auth.
 
-export function Label(props: React.LabelHTMLAttributes<HTMLLabelElement>) {
+export function RequiredMark() {
   return (
-    <label
-      {...props}
-      className={`block text-sm font-medium ${props.className ?? ""}`}
-    />
+    <span className="ml-0.5 font-semibold text-burgundy" aria-hidden="true">
+      *
+    </span>
+  );
+}
+
+export function Label({
+  required,
+  children,
+  className = "",
+  ...props
+}: React.LabelHTMLAttributes<HTMLLabelElement> & { required?: boolean }) {
+  return (
+    <label {...props} className={`block text-sm font-medium ${className}`}>
+      {children}
+      {required ? <RequiredMark /> : null}
+    </label>
   );
 }
 

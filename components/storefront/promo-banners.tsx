@@ -17,7 +17,7 @@ export function PromoBanners({ banners }: { banners: ContentBlockDto[] }) {
       >
         {visible.map((b) => {
           const inner = (
-            <div className="relative overflow-hidden rounded-petal bg-stone/40 shadow-bloom">
+            <div className="relative overflow-hidden rounded-petal bg-stone/40 shadow-bloom transition-[transform,box-shadow] duration-300 ease-out group-hover:-translate-y-0.5 group-hover:shadow-bloom-lg motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
               {b.imageUrl ? (
                 <div className="relative aspect-[21/9]">
                   <Image
@@ -38,6 +38,11 @@ export function PromoBanners({ banners }: { banners: ContentBlockDto[] }) {
                     {b.body && (
                       <p className="mt-2 text-sm text-ivory/85">{b.body}</p>
                     )}
+                    {b.linkUrl && (
+                      <span className="mt-4 inline-flex w-fit rounded-lg bg-ivory/95 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-burgundy">
+                        Shop now
+                      </span>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -55,7 +60,12 @@ export function PromoBanners({ banners }: { banners: ContentBlockDto[] }) {
             </div>
           );
           return b.linkUrl ? (
-            <Link key={b.id} href={b.linkUrl} className="block">
+            <Link
+              key={b.id}
+              href={b.linkUrl}
+              className="group block"
+              aria-label={b.title ? `${b.title} — open` : "Open poster link"}
+            >
               {inner}
             </Link>
           ) : (

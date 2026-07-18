@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { checkoutSchema } from "@/lib/validation/checkout";
 import { CheckoutError, createOrder } from "@/lib/repositories/orders";
+import { getMaintenanceSettings } from "@/lib/repositories/settings";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -13,7 +14,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const session = await auth();
+  const [session, maintenance] = await Promise.all([auth(), getMaintenanceSettings()]);
+  const isStaff =
+    session?.user?.role === "ADMIN" || session?.user?.role === "STAFF";
+  if (maintenance.enabled && !isStaff) {
+    return NextResponse.json({ error: maintenance.message }, { status: 503 });
+  }
 
   try {
     const order = await createOrder(parsed.data, session?.user?.id ?? null);

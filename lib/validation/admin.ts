@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { mediaUrlSchema, optionalMediaUrlSchema } from "@/lib/validation/media";
 
 const emptyToNull = (v: unknown) => (v === "" || v === undefined ? null : v);
 
 export const productFormSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(150),
-  type: z.enum(["BOUQUET", "RAW_MATERIAL", "ADDON"]),
+  type: z.enum(["BOUQUET", "RAW_MATERIAL", "ADDON", "SERVICE"]),
   description: z.string().trim().max(2000).optional().or(z.literal("")),
   categoryId: z.string().min(1, "Choose a category"),
   subCategoryId: z.preprocess(emptyToNull, z.string().nullable()),
@@ -64,10 +65,11 @@ export const orderStatusSchema = z.object({
 });
 
 export const contentBlockFormSchema = z.object({
-  key: z.enum(["home.hero", "announcement.main"]),
+  key: z.enum(["home.hero", "announcement.main", "announcement.ticker"]),
   title: z.string().trim().max(200).optional().or(z.literal("")),
   body: z.string().trim().max(1000).optional().or(z.literal("")),
-  imageUrl: z.preprocess(emptyToNull, z.string().trim().url("Enter a valid image URL").nullable()),
+  imageUrl: mediaUrlSchema,
+  videoUrl: optionalMediaUrlSchema,
   linkUrl: z.preprocess(emptyToNull, z.string().trim().max(300).nullable()),
   isPublished: z.boolean(),
 });

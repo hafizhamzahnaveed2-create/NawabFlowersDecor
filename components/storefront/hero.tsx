@@ -11,11 +11,14 @@ import {
   useTransform,
 } from "framer-motion";
 import { trackEvent } from "@/components/storefront/event-tracker";
+import { SITE_NAME } from "@/lib/brand";
+import { isDirectVideoUrl, youtubeEmbedUrl } from "@/lib/hero-media";
 
 export type HeroSlide = {
   title: string | null;
   body: string | null;
   imageUrl: string | null;
+  videoUrl?: string | null;
   linkUrl?: string | null;
 };
 
@@ -26,6 +29,54 @@ const DEFAULTS: HeroSlide = {
     "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=1200&q=80",
 };
 
+function HeroMedia({ slide }: { slide: HeroSlide }) {
+  const videoUrl = slide.videoUrl?.trim() || null;
+  const imageUrl = slide.imageUrl || DEFAULTS.imageUrl;
+
+  if (videoUrl) {
+    const yt = youtubeEmbedUrl(videoUrl);
+    if (yt) {
+      return (
+        <iframe
+          src={yt}
+          title={slide.title || "Hero video"}
+          className="absolute inset-0 h-full w-full border-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      );
+    }
+    if (isDirectVideoUrl(videoUrl) || videoUrl.startsWith("http")) {
+      return (
+        <video
+          key={videoUrl}
+          src={videoUrl}
+          poster={imageUrl ?? undefined}
+          className="absolute inset-0 h-full w-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
+      );
+    }
+  }
+
+  return (
+    <Image
+      src={imageUrl!}
+      alt="A hand-tied bouquet"
+      fill
+      priority
+      unoptimized={
+        !!imageUrl && !imageUrl.includes("images.unsplash.com")
+      }
+      sizes="(max-width: 1024px) 100vw, 50vw"
+      className="object-cover"
+    />
+  );
+}
+
 export function Hero({ slides }: { slides: HeroSlide[] }) {
   const activeSlides =
     slides.length > 0
@@ -33,6 +84,7 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
           title: s.title || DEFAULTS.title,
           body: s.body || DEFAULTS.body,
           imageUrl: s.imageUrl || DEFAULTS.imageUrl,
+          videoUrl: s.videoUrl,
           linkUrl: s.linkUrl,
         }))
       : [DEFAULTS];
@@ -56,6 +108,7 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
   }, [activeSlides.length, reducedMotion]);
 
   const slide = activeSlides[index] ?? activeSlides[0];
+  const mediaKey = slide.videoUrl || slide.imageUrl || String(index);
 
   return (
     <section
@@ -64,7 +117,10 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
     >
       <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-16 sm:py-20 lg:grid-cols-2">
         <div>
-          <p className="text-sm uppercase tracking-[0.25em] text-sage">
+          <h1 className="font-display text-4xl leading-[1.05] text-burgundy sm:text-5xl lg:text-6xl">
+            {SITE_NAME}
+          </h1>
+          <p className="mt-3 text-sm uppercase tracking-[0.25em] text-sage">
             Fresh · Hand-tied · Delivered on time
           </p>
           <AnimatePresence mode="wait">
@@ -75,10 +131,10 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
               exit={reducedMotion ? undefined : { opacity: 0, y: -8 }}
               transition={{ duration: 0.35 }}
             >
-              <h1 className="mt-4 font-display text-5xl leading-[1.05] text-burgundy sm:text-6xl">
+              <p className="mt-5 font-display text-2xl leading-snug text-ink sm:text-3xl">
                 {slide.title}
-              </h1>
-              <p className="mt-5 max-w-md text-lg leading-relaxed text-ink/75">
+              </p>
+              <p className="mt-4 max-w-md text-lg leading-relaxed text-ink/75">
                 {slide.body}
               </p>
             </motion.div>
@@ -133,25 +189,14 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
         >
           <AnimatePresence mode="wait">
             <motion.div
-              key={slide.imageUrl}
+              key={mediaKey}
               className="absolute inset-0"
               initial={reducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reducedMotion ? undefined : { opacity: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <Image
-                src={slide.imageUrl!}
-                alt="A hand-tied bouquet"
-                fill
-                priority
-                unoptimized={
-                  !!slide.imageUrl &&
-                  !slide.imageUrl.includes("images.unsplash.com")
-                }
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover"
-              />
+              <HeroMedia slide={slide} />
             </motion.div>
           </AnimatePresence>
         </motion.div>

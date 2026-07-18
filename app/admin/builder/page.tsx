@@ -2,12 +2,14 @@ import Link from "next/link";
 import { listAdminBuilderComponents } from "@/lib/repositories/builder";
 import { formatPrice } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
+import { requireAnyPagePermission } from "../require-page-permission";
 
 export const metadata = { title: "Builder · Admin" };
 
 const KIND_ORDER = ["STEM", "GREENERY", "WRAP", "RIBBON", "VASE", "CARD"];
 
 export default async function AdminBuilderPage() {
+  await requireAnyPagePermission("builder.write", "catalog.read");
   const components = await listAdminBuilderComponents();
   const grouped = KIND_ORDER.map((kind) => ({
     kind,
@@ -78,6 +80,9 @@ export default async function AdminBuilderPage() {
                           </p>
                         </div>
                         {!c.isActive && <Badge variant="muted">Hidden</Badge>}
+                        <span className="shrink-0 rounded-lg border border-stone bg-white px-3 py-1.5 text-sm font-medium text-ink">
+                          Edit
+                        </span>
                         {c.stock <= 5 && c.isActive && (
                           <Badge variant="sale">Low stock</Badge>
                         )}

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireStaff } from "@/lib/auth-helpers";
+import { requirePermission } from "@/lib/auth-helpers";
 import {
   analyticsRangeSchema,
   exportTypeSchema,
@@ -12,7 +12,7 @@ import {
 } from "@/lib/repositories/admin/exports";
 
 export async function GET(request: Request) {
-  const session = await requireStaff();
+  const session = await requirePermission("analytics.read");
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

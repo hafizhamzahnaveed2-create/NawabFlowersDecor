@@ -1,14 +1,18 @@
 import { auth } from "@/lib/auth";
 import { CheckoutForm } from "./checkout-form";
 import { TrackCheckoutStart } from "@/components/storefront/track-checkout-start";
-import { listPaymentAccounts } from "@/lib/repositories/settings";
+import {
+  getDeliveryScheduleSettings,
+  listPaymentAccounts,
+} from "@/lib/repositories/settings";
 
 export const metadata = { title: "Checkout" };
 
 export default async function CheckoutPage() {
-  const [session, paymentAccounts] = await Promise.all([
+  const [session, paymentAccounts, schedule] = await Promise.all([
     auth(),
     listPaymentAccounts(true),
+    getDeliveryScheduleSettings(),
   ]);
 
   return (
@@ -18,6 +22,8 @@ export default async function CheckoutPage() {
       <CheckoutForm
         isSignedIn={!!session?.user}
         userEmail={session?.user?.email ?? null}
+        minLeadDays={schedule.minLeadDays}
+        maxLeadDays={schedule.maxLeadDays}
         paymentAccounts={paymentAccounts.map((a) => ({
           id: a.id,
           name: a.name,

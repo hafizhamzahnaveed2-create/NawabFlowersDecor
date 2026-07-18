@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea, FieldError } from "@/components/ui/field";
+import { MediaUrlField } from "@/components/admin/media-url-field";
 import type { ContentBlockKindInput } from "@/lib/validation/cms";
 
 type BlockRow = {
@@ -20,17 +21,19 @@ type BlockRow = {
   isPublished: boolean;
 };
 
+type FieldName = "title" | "body" | "imageUrl" | "linkUrl" | "videoUrl";
+
 const kindHints: Record<
   ContentBlockKindInput,
-  { title: string; keyHint: string; fields: ("title" | "body" | "imageUrl" | "linkUrl")[] }
+  { title: string; keyHint: string; fields: FieldName[] }
 > = {
   HERO_SLIDE: {
     title: "Extra hero slides",
     keyHint: "home.hero.2",
-    fields: ["title", "body", "imageUrl", "linkUrl"],
+    fields: ["title", "body", "imageUrl", "videoUrl", "linkUrl"],
   },
   BANNER: {
-    title: "Banners & popup",
+    title: "Homepage posters & popup",
     keyHint: "banner.spring or popup.main",
     fields: ["title", "body", "imageUrl", "linkUrl"],
   },
@@ -78,6 +81,17 @@ export function CmsBlocksPanel({
       id?: string;
       form: FormData;
     }) => {
+      const videoUrl = String(payload.form.get("videoUrl") ?? "").trim();
+      const baseData: Record<string, unknown> =
+        kind === "SECTION"
+          ? { excerpt: String(payload.form.get("excerpt") ?? "") }
+          : kind === "BANNER" &&
+              String(payload.form.get("key") ?? "").startsWith("popup.")
+            ? { delayMs: 800 }
+            : {};
+      if (kind === "HERO_SLIDE" && videoUrl) {
+        baseData.videoUrl = videoUrl;
+      }
       const body = {
         kind,
         key: String(payload.form.get("key") ?? ""),
@@ -87,15 +101,7 @@ export function CmsBlocksPanel({
         linkUrl: String(payload.form.get("linkUrl") ?? "") || null,
         sortOrder: Number(payload.form.get("sortOrder") ?? 0),
         isPublished: payload.form.get("isPublished") === "on",
-        data:
-          kind === "SECTION"
-            ? {
-                excerpt: String(payload.form.get("excerpt") ?? ""),
-              }
-            : kind === "BANNER" &&
-                String(payload.form.get("key") ?? "").startsWith("popup.")
-              ? { delayMs: 800 }
-              : null,
+        data: Object.keys(baseData).length > 0 ? baseData : null,
       };
       const res = await fetch(
         payload.id ? `/api/admin/content/${payload.id}` : "/api/admin/content",
@@ -135,7 +141,9 @@ export function CmsBlocksPanel({
           <>
             {" "}
             — use key <code className="text-xs">popup.main</code> for the
-            promotional popup.
+            promotional popup. For homepage posters, set the{" "}
+            <strong>click link</strong> so the whole poster opens a page (e.g.{" "}
+            <code className="text-xs">/category/decorations</code>).
           </>
         )}
         {kind === "SECTION" && (
@@ -153,6 +161,9 @@ export function CmsBlocksPanel({
               <div>
                 <span className="font-medium">{b.title || b.key}</span>
                 <span className="ml-2 text-ink/40">{b.key}</span>
+                {b.linkUrl && (
+                  <span className="ml-2 text-xs text-sage">→ {b.linkUrl}</span>
+                )}
                 {!b.isPublished && (
                   <span className="ml-2 text-xs text-ink/40">draft</span>
                 )}
@@ -251,24 +262,56 @@ export function CmsBlocksPanel({
           </div>
         )}
         {hint.fields.includes("imageUrl") && (
-          <div>
-            <Label htmlFor={`${kind}-image`}>Image URL</Label>
-            <Input
-              id={`${kind}-image`}
-              name="imageUrl"
-              type="url"
-              defaultValue={editing?.imageUrl ?? ""}
-            />
-          </div>
+          <MediaUrlField
+            id={`${kind}-image`}
+            name="imageUrl"
+            label="Image"
+            defaultValue={editing?.imageUrl ?? ""}
+            folder="content"
+            kind="image"
+            hint="Paste a URL or upload from your device."
+          />
+        )}
+        {hint.fields.includes("videoUrl") && (
+          <MediaUrlField
+            id={`${kind}-video`}
+            name="videoUrl"
+            label="Video (optional)"
+            defaultValue={
+              typeof editing?.data?.videoUrl === "string"
+                ? editing.data.videoUrl
+                : ""
+            }
+            folder="content/videos"
+            kind="video"
+            hint="Plays on the homepage hero instead of the photo when set."
+          />
         )}
         {hint.fields.includes("linkUrl") && (
           <div>
-            <Label htmlFor={`${kind}-link`}>Link URL</Label>
+            <Label htmlFor={`${kind}-link`}>
+              {kind === "BANNER"
+                ? "Click link (where the poster goes)"
+                : kind === "ANNOUNCEMENT"
+                  ? "Link (optional)"
+                  : "Click link (optional)"}
+            </Label>
             <Input
               id={`${kind}-link`}
               name="linkUrl"
               defaultValue={editing?.linkUrl ?? ""}
+              placeholder={
+                kind === "BANNER"
+                  ? "/category/bouquets or https://…"
+                  : "https://… or /path"
+              }
             />
+            {kind === "BANNER" && (
+              <p className="mt-1 text-xs text-ink/50">
+                When set, tapping anywhere on the poster (image and text) opens
+                this link on the homepage.
+              </p>
+            )}
           </div>
         )}
         <label className="flex items-center gap-2 text-sm">

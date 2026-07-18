@@ -2,21 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { Providers } from "@/app/providers";
+import { SiteLogo } from "@/components/brand/site-logo";
+import { WelcomeSplash } from "@/components/welcome/welcome-splash";
+import { AdminNav } from "./admin-nav";
 
 export const metadata = { title: "Admin" };
-
-const nav = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/analytics", label: "Analytics" },
-  { href: "/admin/products", label: "Products" },
-  { href: "/admin/builder", label: "Builder" },
-  { href: "/admin/orders", label: "Orders" },
-  { href: "/admin/payment-methods", label: "Payments" },
-  { href: "/admin/coupons", label: "Coupons" },
-  { href: "/admin/reviews", label: "Reviews" },
-  { href: "/admin/content", label: "Content" },
-  { href: "/admin/settings", label: "Settings" },
-];
 
 export default async function AdminLayout({
   children,
@@ -33,28 +23,19 @@ export default async function AdminLayout({
 
   return (
     <Providers>
+      <WelcomeSplash greeting="Welcome to your shop admin" />
       <div className="flex min-h-screen">
-        <aside className="flex w-56 shrink-0 flex-col bg-burgundy text-ivory">
-          <Link href="/admin" className="px-5 py-5">
-            <span className="font-display text-xl">Nawab</span>
-            <span className="mt-0.5 block text-xs uppercase tracking-[0.2em] text-blush">
+        <aside className="flex w-60 shrink-0 flex-col bg-burgundy text-ivory">
+          <Link href="/admin" className="block px-5 py-5">
+            <SiteLogo
+              size={40}
+              nameClassName="font-display text-base leading-tight text-ivory"
+            />
+            <span className="mt-1.5 block text-xs uppercase tracking-[0.2em] text-blush">
               Shop admin
             </span>
           </Link>
-          <nav className="flex-1 px-3" aria-label="Admin">
-            <ul className="space-y-1">
-              {nav.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="block rounded-lg px-3 py-2 text-sm font-medium text-ivory/85 transition-colors hover:bg-burgundy-deep hover:text-ivory"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <AdminNav permissions={session.user.permissions} />
           <div className="border-t border-ivory/15 px-5 py-4">
             <p className="truncate text-xs text-ivory/70">{session.user.email}</p>
             <div className="mt-2 flex items-center gap-3 text-sm">
@@ -74,7 +55,7 @@ export default async function AdminLayout({
             </div>
           </div>
         </aside>
-        <main className="min-w-0 flex-1 bg-ivory px-8 py-8">{children}</main>
+        <main className="min-w-0 flex-1 bg-ivory px-6 py-8 sm:px-8">{children}</main>
       </div>
     </Providers>
   );

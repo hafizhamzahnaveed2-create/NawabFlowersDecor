@@ -13,6 +13,7 @@ import {
   RevenueBars,
   StatusBars,
 } from "@/components/admin/analytics-charts";
+import { requirePagePermission } from "../require-page-permission";
 
 export const metadata = { title: "Analytics · Admin" };
 
@@ -21,6 +22,7 @@ export default async function AdminAnalyticsPage({
 }: {
   searchParams: Promise<{ from?: string; to?: string }>;
 }) {
+  await requirePagePermission("analytics.read");
   const sp = await searchParams;
   const parsed = analyticsRangeSchema.safeParse(sp);
   const range = resolveAnalyticsRange(

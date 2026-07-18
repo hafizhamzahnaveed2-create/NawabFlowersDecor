@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { listLinkableRawMaterials } from "@/lib/repositories/builder";
 import { BuilderComponentForm } from "../component-form";
+import { requirePagePermission } from "../../require-page-permission";
 
 export const metadata = { title: "Add builder component · Admin" };
 
 export default async function NewBuilderComponentPage() {
+  await requirePagePermission("builder.write");
   const linkable = await listLinkableRawMaterials();
 
   return (

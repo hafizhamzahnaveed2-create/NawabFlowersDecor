@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireStaff } from "@/lib/auth-helpers";
+import { requirePermission } from "@/lib/auth-helpers";
 import {
   socialLinkSchema,
   whatsappSettingSchema,
+  maintenanceSettingSchema,
+  featureFlagsSchema,
+  deliveryScheduleSchema,
 } from "@/lib/validation/settings";
 import {
   deleteSocialLink,
@@ -10,10 +13,15 @@ import {
   listSocialLinks,
   setWhatsAppNumber,
   upsertSocialLink,
+  getMaintenanceSettings,
+  setMaintenanceSettings,
+  getFeatureFlags,
+  setFeatureFlags,
+  setDeliveryScheduleSettings,
 } from "@/lib/repositories/settings";
 
 export async function GET() {
-  const session = await requireStaff();
+  const session = await requirePermission("settings.write");
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const [whatsapp, socials] = await Promise.all([
     getWhatsAppNumber(),
@@ -23,7 +31,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const session = await requireStaff();
+  const session = await requirePermission("settings.write");
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await request.json().catch(() => null);
   if (body?.kind === "whatsapp") {
@@ -42,11 +50,38 @@ export async function PUT(request: Request) {
     const link = await upsertSocialLink(parsed.data, session.user.id);
     return NextResponse.json({ link });
   }
+  if (body?.kind === "maintenance") {
+    const parsed = maintenanceSettingSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid maintenance settings" }, { status: 400 });
+    }
+    await setMaintenanceSettings(parsed.data, session.user.id);
+    return NextResponse.json({ ok: true });
+  }
+  if (body?.kind === "features") {
+    const parsed = featureFlagsSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid feature flags" }, { status: 400 });
+    }
+    await setFeatureFlags(parsed.data, session.user.id);
+    return NextResponse.json({ ok: true });
+  }
+  if (body?.kind === "deliverySchedule") {
+    const parsed = deliveryScheduleSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid delivery schedule settings" },
+        { status: 400 },
+      );
+    }
+    await setDeliveryScheduleSettings(parsed.data, session.user.id);
+    return NextResponse.json({ ok: true });
+  }
   return NextResponse.json({ error: "Unknown kind" }, { status: 400 });
 }
 
 export async function DELETE(request: Request) {
-  const session = await requireStaff();
+  const session = await requirePermission("settings.write");
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const url = new URL(request.url);
   const id = url.searchParams.get("id");

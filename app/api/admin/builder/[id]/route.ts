@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireStaff } from "@/lib/auth-helpers";
+import { requirePermission } from "@/lib/auth-helpers";
 import { bouquetComponentSchema } from "@/lib/validation/builder";
 import {
   deleteBuilderComponent,
@@ -10,7 +10,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireStaff();
+  const session = await requirePermission("builder.write");
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -41,7 +41,7 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireStaff();
+  const session = await requirePermission("builder.write");
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

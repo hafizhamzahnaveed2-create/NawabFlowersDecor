@@ -24,24 +24,29 @@ export function PaymentMethodsFooter({
 
   return (
     <>
-      <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-sage">
-          Pay ahead
-        </h3>
-        <p className="mt-2 text-sm text-ink/60">
-          Transfer details for JazzCash, EasyPaisa, and bank.
-        </p>
-        <ul className="mt-3 flex flex-wrap gap-2">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sage">
+            We accept
+          </p>
+          <p className="mt-1 text-sm text-ink/55">
+            Tap a method for account details — JazzCash, EasyPaisa, or bank
+            transfer.
+          </p>
+        </div>
+        <ul className="flex flex-wrap items-center gap-2 sm:justify-end">
           {accounts.map((a) => (
             <li key={a.id}>
               <button
                 type="button"
                 onClick={() => setOpen(a)}
-                className="flex items-center gap-2 rounded-lg border border-stone bg-white px-3 py-2 text-sm transition-colors hover:border-sage hover:text-burgundy"
+                className="inline-flex h-11 items-center rounded-lg border border-stone bg-white px-3 shadow-[0_1px_0_rgba(43,39,36,0.04)] transition-colors hover:border-burgundy/25 hover:bg-ivory"
                 aria-label={`${a.name} account details`}
               >
-                <PaymentMethodIcon iconKey={a.iconKey} className="size-7" />
-                <span>{a.name}</span>
+                <PaymentMethodIcon
+                  iconKey={a.iconKey}
+                  className="h-8 w-auto"
+                />
               </button>
             </li>
           ))}
@@ -60,11 +65,14 @@ export function PaymentMethodsFooter({
             className="w-full max-w-md rounded-petal border border-stone bg-ivory p-6 shadow-bloom-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3">
-              <PaymentMethodIcon iconKey={open.iconKey} className="size-10" />
+            <div className="flex items-center gap-3 border-b border-stone pb-4">
+              <PaymentMethodIcon
+                iconKey={open.iconKey}
+                className="h-9"
+              />
               <h2
                 id="pay-detail-title"
-                className="font-display text-2xl text-burgundy"
+                className="sr-only"
               >
                 {open.name}
               </h2>
