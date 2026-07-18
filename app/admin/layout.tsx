@@ -40,20 +40,28 @@ export default async function AdminLayout({
             <AdminNav permissions={session.user.permissions} />
             <div className="border-t border-ivory/15 px-5 py-4">
               <p className="truncate text-xs text-ivory/70">{session.user.email}</p>
-              <div className="mt-2 flex items-center gap-3 text-sm">
-                <Link href="/" className="text-blush hover:text-ivory">
-                  View shop
-                </Link>
-                <form
-                  action={async () => {
-                    "use server";
-                    await signOut({ redirectTo: "/" });
-                  }}
+              <div className="mt-2 flex flex-col gap-1.5 text-sm">
+                <Link
+                  href="/account"
+                  className="text-blush hover:text-ivory"
                 >
-                  <button type="submit" className="text-blush hover:text-ivory">
-                    Sign out
-                  </button>
-                </form>
+                  Profile settings
+                </Link>
+                <div className="flex items-center gap-3">
+                  <Link href="/" className="text-blush hover:text-ivory">
+                    View shop
+                  </Link>
+                  <form
+                    action={async () => {
+                      "use server";
+                      await signOut({ redirectTo: "/" });
+                    }}
+                  >
+                    <button type="submit" className="text-blush hover:text-ivory">
+                      Sign out
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </aside>
