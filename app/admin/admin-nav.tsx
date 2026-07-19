@@ -141,8 +141,8 @@ export function AdminNav({
     .filter((group) => group.items.length > 0);
 
   return (
-    <nav className="flex-1 px-3 pb-4" aria-label="Admin">
-      <div className="space-y-5">
+    <nav className="px-3 pb-2" aria-label="Admin">
+      <div className="space-y-4">
         {visibleGroups.map((group) => (
           <div key={group.label}>
             <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-blush/80">

@@ -37,8 +37,12 @@ export function AdminShell({
   }, [open]);
 
   const sidebar = (
-    <>
-      <Link href="/admin" className="block px-5 py-5" onClick={() => setOpen(false)}>
+    <div className="flex h-full flex-col">
+      <Link
+        href="/admin"
+        className="shrink-0 block px-5 py-5"
+        onClick={() => setOpen(false)}
+      >
         <SiteLogo
           size={40}
           nameClassName="font-display text-base leading-tight text-ivory"
@@ -47,30 +51,32 @@ export function AdminShell({
           Shop admin
         </span>
       </Link>
+
+      {/* One scroll area: nav + account footer stay together (no empty gap) */}
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <AdminNav permissions={permissions} onNavigate={() => setOpen(false)} />
-      </div>
-      <div className="shrink-0 border-t border-ivory/15 px-5 py-4">
-        <p className="truncate text-xs text-ivory/70">{email}</p>
-        <div className="mt-2 flex flex-col gap-1.5 text-sm">
-          <Link href="/account" className="text-blush hover:text-ivory">
-            Profile settings
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-blush hover:text-ivory">
-              View shop
+        <div className="border-t border-ivory/15 px-5 py-4">
+          <p className="truncate text-xs text-ivory/70">{email}</p>
+          <div className="mt-2 flex flex-col gap-1.5 text-sm">
+            <Link href="/account" className="text-blush hover:text-ivory">
+              Profile settings
             </Link>
-            <SignOutButton className="text-blush hover:text-ivory" />
+            <div className="flex items-center gap-3">
+              <Link href="/" className="text-blush hover:text-ivory">
+                View shop
+              </Link>
+              <SignOutButton className="text-blush hover:text-ivory" />
+            </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 
   return (
-    <div className="flex min-h-screen">
-      {/* Viewport-height only — does not grow with long page content */}
-      <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col overflow-hidden bg-burgundy text-ivory lg:flex">
+    // Lock shell to viewport so sidebar + main scroll independently
+    <div className="flex h-svh overflow-hidden">
+      <aside className="hidden h-full w-60 shrink-0 bg-burgundy text-ivory lg:block">
         {sidebar}
       </aside>
 
@@ -82,29 +88,27 @@ export function AdminShell({
             aria-label="Close menu"
             onClick={() => setOpen(false)}
           />
-          <aside className="relative flex h-full w-[min(18rem,86vw)] flex-col bg-burgundy text-ivory shadow-bloom-lg">
+          <aside className="relative h-full w-[min(18rem,86vw)] bg-burgundy text-ivory shadow-bloom-lg">
             {sidebar}
           </aside>
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-stone/80 bg-ivory/90 px-4 py-3 backdrop-blur lg:hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="shrink-0 flex items-center gap-3 border-b border-stone/80 bg-ivory/90 px-4 py-3 backdrop-blur lg:hidden">
           <button
             type="button"
             onClick={() => setOpen(true)}
             className="rounded-[var(--radius-control)] border border-stone bg-surface px-3 py-2 text-sm font-medium text-burgundy"
             aria-expanded={open}
-            aria-controls="admin-mobile-nav"
           >
             Menu
           </button>
-          <p className="truncate font-display text-lg text-burgundy">Shop admin</p>
+          <p className="truncate font-display text-lg text-burgundy">
+            Shop admin
+          </p>
         </header>
-        <main
-          id="admin-mobile-nav"
-          className="min-w-0 flex-1 bg-ivory px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
-        >
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-ivory px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
           {children}
         </main>
       </div>
