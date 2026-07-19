@@ -69,7 +69,8 @@ export function AdminShell({
 
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden w-60 shrink-0 flex-col bg-burgundy text-ivory lg:flex">
+      {/* Viewport-height only — does not grow with long page content */}
+      <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col overflow-hidden bg-burgundy text-ivory lg:flex">
         {sidebar}
       </aside>
 
