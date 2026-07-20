@@ -6,12 +6,14 @@ import "./globals.css";
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
-  axes: ["opsz", "SOFT", "WONK"],
+  axes: ["opsz"],
+  display: "swap",
 });
 
 const karla = Karla({
   variable: "--font-karla",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

@@ -64,7 +64,7 @@ export function WelcomeSplash({
 
   useEffect(() => {
     if (phase !== "show") return;
-    const holdMs = reduced ? 900 : 3200;
+    const holdMs = reduced ? 700 : 2200;
     const timer = window.setTimeout(() => beginFly(), holdMs);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -2,18 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   motion,
   AnimatePresence,
   useReducedMotion,
-  useScroll,
-  useTransform,
 } from "framer-motion";
 import { trackEvent } from "@/components/storefront/event-tracker";
 import { SITE_NAME } from "@/lib/brand";
 import { buttonClasses } from "@/components/ui/button";
 import { isDirectVideoUrl, youtubeEmbedUrl } from "@/lib/hero-media";
+import { canOptimizeImage } from "@/lib/images";
 
 export type HeroSlide = {
   title: string | null;
@@ -30,11 +29,17 @@ const DEFAULTS: HeroSlide = {
     "https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=1600&q=80",
 };
 
-function HeroMedia({ slide }: { slide: HeroSlide }) {
+function HeroMedia({
+  slide,
+  allowVideo,
+}: {
+  slide: HeroSlide;
+  allowVideo: boolean;
+}) {
   const videoUrl = slide.videoUrl?.trim() || null;
   const imageUrl = slide.imageUrl || DEFAULTS.imageUrl;
 
-  if (videoUrl) {
+  if (allowVideo && videoUrl) {
     const yt = youtubeEmbedUrl(videoUrl);
     if (yt) {
       return (
@@ -44,6 +49,7 @@ function HeroMedia({ slide }: { slide: HeroSlide }) {
           className="absolute inset-0 h-full w-full scale-105 border-0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
+          loading="lazy"
         />
       );
     }
@@ -58,6 +64,7 @@ function HeroMedia({ slide }: { slide: HeroSlide }) {
           muted
           loop
           playsInline
+          preload="metadata"
         />
       );
     }
@@ -69,9 +76,9 @@ function HeroMedia({ slide }: { slide: HeroSlide }) {
       alt=""
       fill
       priority
-      unoptimized={!!imageUrl && !imageUrl.includes("images.unsplash.com")}
+      unoptimized={!!imageUrl && !canOptimizeImage(imageUrl)}
       sizes="100vw"
-      className="object-cover"
+      className="object-cover hero-media-ken"
     />
   );
 }
@@ -89,13 +96,30 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
       : [DEFAULTS];
 
   const [index, setIndex] = useState(0);
+  const [allowVideo, setAllowVideo] = useState(false);
   const reducedMotion = useReducedMotion();
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"],
-  });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 60]);
+
+  // Poster/image first for LCP; hydrate video after idle.
+  useEffect(() => {
+    if (reducedMotion) return;
+    let cancelled = false;
+    const enable = () => {
+      if (!cancelled) setAllowVideo(true);
+    };
+    const ric = window.requestIdleCallback?.bind(window);
+    if (ric) {
+      const id = ric(enable, { timeout: 2500 });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback?.(id);
+      };
+    }
+    const t = setTimeout(enable, 1200);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [reducedMotion]);
 
   useEffect(() => {
     if (activeSlides.length < 2 || reducedMotion) return;
@@ -110,14 +134,8 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
   const mediaKey = slide.videoUrl || slide.imageUrl || String(index);
 
   return (
-    <section
-      ref={ref}
-      className="relative isolate min-h-[78vh] overflow-hidden sm:min-h-[85vh]"
-    >
-      <motion.div
-        style={reducedMotion ? undefined : { y }}
-        className="absolute inset-0"
-      >
+    <section className="relative isolate min-h-[78vh] overflow-hidden sm:min-h-[85vh]">
+      <div className="absolute inset-0">
         <AnimatePresence mode="wait">
           <motion.div
             key={mediaKey}
@@ -127,12 +145,12 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
             exit={reducedMotion ? undefined : { opacity: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
-            <HeroMedia slide={slide} />
+            <HeroMedia slide={slide} allowVideo={allowVideo} />
           </motion.div>
         </AnimatePresence>
         <div className="absolute inset-0 bg-gradient-to-r from-ink/72 via-ink/45 to-ink/20" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-ink/25" />
-      </motion.div>
+      </div>
 
       <div className="relative mx-auto flex min-h-[78vh] max-w-6xl flex-col justify-end px-6 pb-14 pt-28 sm:min-h-[85vh] sm:pb-20 sm:pt-32">
         <motion.div
@@ -172,7 +190,7 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
                   meta: { label: "hero_build_your_own" },
                 })
               }
-              className={buttonClasses("primary", "lg")}
+              className={`${buttonClasses("primary", "lg")} btn-shine`}
             >
               Build your own
             </Link>
@@ -184,7 +202,7 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
                   meta: { label: "hero_shop_bouquets" },
                 })
               }
-              className="inline-flex items-center justify-center rounded-[var(--radius-control)] border border-ivory/40 bg-ivory/10 px-6 py-3 text-base font-medium text-ivory backdrop-blur-sm transition-colors hover:bg-ivory/20"
+              className="btn-lift inline-flex items-center justify-center rounded-[var(--radius-control)] border border-ivory/40 bg-ivory/10 px-6 py-3 text-base font-medium text-ivory backdrop-blur-sm transition-[transform,background-color,box-shadow] duration-300 hover:bg-ivory/20"
             >
               Shop bouquets
             </Link>
@@ -203,8 +221,8 @@ export function Hero({ slides }: { slides: HeroSlide[] }) {
                   aria-selected={i === index}
                   aria-label={`Slide ${i + 1}`}
                   onClick={() => setIndex(i)}
-                  className={`h-1.5 w-7 rounded-full transition-colors ${
-                    i === index ? "bg-ivory" : "bg-ivory/35"
+                  className={`h-1.5 rounded-full transition-[width,background-color] duration-300 ${
+                    i === index ? "w-10 bg-ivory" : "w-7 bg-ivory/35 hover:bg-ivory/55"
                   }`}
                 />
               ))}

@@ -8,6 +8,7 @@ import { getLoyaltyPoints } from "@/lib/repositories/retention";
 import { getAccountProfile } from "@/lib/repositories/account";
 import { getLoyaltySettings } from "@/lib/repositories/settings";
 import { formatPrice } from "@/lib/money";
+import { canOptimizeImage } from "@/lib/images";
 import { isSaleActive } from "@/lib/pricing";
 import { Badge } from "@/components/ui/badge";
 import { Price } from "@/components/storefront/price";
@@ -121,7 +122,7 @@ export default async function AccountPage() {
                       fill
                       sizes="64px"
                       className="object-cover"
-                      unoptimized={!item.imageUrl.includes("images.unsplash.com")}
+                      unoptimized={!canOptimizeImage(item.imageUrl)}
                     />
                   )}
                 </Link>

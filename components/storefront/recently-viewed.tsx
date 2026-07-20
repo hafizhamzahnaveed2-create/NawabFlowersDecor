@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRecentlyViewed, type RecentProduct } from "@/lib/recently-viewed";
 import { formatPrice } from "@/lib/money";
+import { canOptimizeImage } from "@/lib/images";
 import { useHydrated } from "@/lib/use-hydrated";
 
 export function TrackRecentlyViewed({ product }: { product: RecentProduct }) {
@@ -30,25 +31,27 @@ export function RecentlyViewedRail({ excludeId }: { excludeId?: string }) {
           <Link
             key={p.id}
             href={`/product/${p.slug}`}
-            className="group overflow-hidden rounded-petal bg-white shadow-bloom transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-bloom-lg motion-reduce:transition-none"
+            className="card-3d group block overflow-hidden rounded-petal bg-white shadow-bloom"
           >
-            <div className="relative aspect-[4/5] bg-stone/40">
-              {p.imageUrl && (
-                <Image
-                  src={p.imageUrl}
-                  alt={p.name}
-                  fill
-                  sizes="25vw"
-                  className="object-cover"
-                  unoptimized={!p.imageUrl.includes("images.unsplash.com")}
-                />
-              )}
-            </div>
-            <div className="px-4 py-3">
-              <p className="truncate font-medium group-hover:text-burgundy">
-                {p.name}
-              </p>
-              <p className="mt-1 text-sm">{formatPrice(p.price)}</p>
+            <div className="card-3d-inner">
+              <div className="relative aspect-[4/5] bg-stone/40">
+                {p.imageUrl && (
+                  <Image
+                    src={p.imageUrl}
+                    alt={p.name}
+                    fill
+                    sizes="25vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.05] motion-reduce:group-hover:scale-100"
+                    unoptimized={!canOptimizeImage(p.imageUrl)}
+                  />
+                )}
+              </div>
+              <div className="px-4 py-3">
+                <p className="truncate font-medium group-hover:text-burgundy">
+                  {p.name}
+                </p>
+                <p className="mt-1 text-sm">{formatPrice(p.price)}</p>
+              </div>
             </div>
           </Link>
         ))}

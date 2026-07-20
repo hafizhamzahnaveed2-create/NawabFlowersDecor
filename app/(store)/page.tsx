@@ -71,25 +71,27 @@ export default async function HomePage() {
             <Link
               key={category.id}
               href={`/category/${category.slug}`}
-              className="group relative aspect-[3/2] overflow-hidden rounded-petal bg-burgundy/25 shadow-bloom transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-bloom-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              className="tile-3d group block"
             >
-              {categoryImages[category.slug] && (
-                <Image
-                  src={categoryImages[category.slug]}
-                  alt=""
-                  fill
-                  sizes="(max-width: 640px) 100vw, 25vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none"
-                />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-ink/10 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-5">
-                <h3 className="font-display text-2xl text-ivory">
-                  {category.name}
-                </h3>
-                <p className="mt-0.5 line-clamp-2 text-sm text-ivory/80">
-                  {category.subCategories.map((s) => s.name).join(" · ")}
-                </p>
+              <div className="tile-3d-inner relative aspect-[3/2] overflow-hidden rounded-petal bg-burgundy/25 shadow-bloom">
+                {categoryImages[category.slug] && (
+                  <Image
+                    src={categoryImages[category.slug]}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 100vw, 25vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.07] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/65 via-ink/15 to-transparent transition-opacity duration-300 group-hover:from-ink/75" />
+                <div className="absolute inset-x-0 bottom-0 p-5 transition-transform duration-300 group-hover:translate-y-[-2px] motion-reduce:group-hover:translate-y-0">
+                  <h3 className="font-display text-2xl text-ivory">
+                    {category.name}
+                  </h3>
+                  <p className="mt-0.5 line-clamp-2 text-sm text-ivory/80">
+                    {category.subCategories.map((s) => s.name).join(" · ")}
+                  </p>
+                </div>
               </div>
             </Link>
           ))}

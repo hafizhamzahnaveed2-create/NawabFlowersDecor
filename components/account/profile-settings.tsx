@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useRef, useState } from "react";
 import { Input, Label } from "@/components/ui/field";
+import { canOptimizeImage } from "@/lib/images";
 
 type Profile = {
   name: string | null;
@@ -139,7 +140,7 @@ export function ProfileSettings({ initial }: { initial: Profile }) {
                   fill
                   sizes="80px"
                   className="object-cover"
-                  unoptimized={!displayImage.includes("images.unsplash.com")}
+                  unoptimized={!canOptimizeImage(displayImage)}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-ink/40">

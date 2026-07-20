@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ContentBlockDto } from "@/lib/repositories/content";
+import { canOptimizeImage } from "@/lib/images";
 
 export function PromoBanners({ banners }: { banners: ContentBlockDto[] }) {
   const visible = banners.filter(
@@ -17,7 +18,7 @@ export function PromoBanners({ banners }: { banners: ContentBlockDto[] }) {
       >
         {visible.map((b) => {
           const inner = (
-            <div className="relative overflow-hidden rounded-petal bg-stone/40 shadow-bloom transition-[transform,box-shadow] duration-300 ease-out group-hover:-translate-y-0.5 group-hover:shadow-bloom-lg motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
+            <div className="tile-3d-inner relative overflow-hidden rounded-petal bg-stone/40 shadow-bloom">
               {b.imageUrl ? (
                 <div className="relative aspect-[21/9]">
                   <Image
@@ -25,8 +26,8 @@ export function PromoBanners({ banners }: { banners: ContentBlockDto[] }) {
                     alt={b.title ?? ""}
                     fill
                     sizes="(max-width: 640px) 100vw, 50vw"
-                    className="object-cover"
-                    unoptimized={!b.imageUrl.includes("images.unsplash.com")}
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                    unoptimized={!canOptimizeImage(b.imageUrl)}
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-ink/55 to-transparent" />
                   <div className="absolute inset-y-0 left-0 flex max-w-md flex-col justify-center p-6 sm:p-8">
@@ -39,7 +40,7 @@ export function PromoBanners({ banners }: { banners: ContentBlockDto[] }) {
                       <p className="mt-2 text-sm text-ivory/85">{b.body}</p>
                     )}
                     {b.linkUrl && (
-                      <span className="mt-4 inline-flex w-fit rounded-lg bg-ivory/95 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-burgundy">
+                      <span className="mt-4 inline-flex w-fit rounded-lg bg-ivory/95 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-burgundy transition-transform duration-300 group-hover:translate-x-0.5">
                         Shop now
                       </span>
                     )}
@@ -63,13 +64,15 @@ export function PromoBanners({ banners }: { banners: ContentBlockDto[] }) {
             <Link
               key={b.id}
               href={b.linkUrl}
-              className="group block"
+              className="tile-3d group block"
               aria-label={b.title ? `${b.title} — open` : "Open poster link"}
             >
               {inner}
             </Link>
           ) : (
-            <div key={b.id}>{inner}</div>
+            <div key={b.id} className="tile-3d">
+              {inner}
+            </div>
           );
         })}
       </div>

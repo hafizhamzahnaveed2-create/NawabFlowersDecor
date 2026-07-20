@@ -1,12 +1,10 @@
 import { Providers } from "@/app/providers";
 import { Header } from "@/components/storefront/header";
 import { Footer } from "@/components/storefront/footer";
-import { CartDrawer } from "@/components/storefront/cart-drawer";
 import { AnnouncementBar } from "@/components/storefront/announcement-bar";
 import { NewsTicker } from "@/components/storefront/news-ticker";
-import { PromoPopup } from "@/components/storefront/promo-popup";
 import { EventTracker } from "@/components/storefront/event-tracker";
-import { WhatsAppFloat } from "@/components/storefront/whatsapp-float";
+import { DeferredOverlays } from "@/components/storefront/deferred-overlays";
 import { WelcomeSplash } from "@/components/welcome/welcome-splash";
 import { getPublishedBlock } from "@/lib/repositories/content";
 import {
@@ -49,9 +47,8 @@ export default async function StoreLayout({
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
-      <CartDrawer />
-      <WhatsAppFloat number={whatsapp} />
-      <PromoPopup
+      <DeferredOverlays
+        whatsapp={whatsapp}
         popup={
           popup
             ? {

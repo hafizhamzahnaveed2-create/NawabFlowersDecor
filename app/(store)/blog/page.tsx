@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { listPublishedBlogPosts } from "@/lib/repositories/content";
+import { canOptimizeImage } from "@/lib/images";
 
 export const metadata: Metadata = { title: "Journal" };
 
@@ -39,9 +40,7 @@ export default async function BlogIndexPage() {
                         fill
                         sizes="180px"
                         className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                        unoptimized={
-                          !post.imageUrl.includes("images.unsplash.com")
-                        }
+                        unoptimized={!canOptimizeImage(post.imageUrl)}
                       />
                     )}
                   </div>

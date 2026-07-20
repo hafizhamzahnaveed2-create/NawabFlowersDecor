@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { BuilderComponent } from "@/lib/repositories/builder";
 import { formatPrice } from "@/lib/money";
 import { selectedItems, runningTotal } from "@/lib/builder/store";
+import { canOptimizeImage } from "@/lib/images";
 
 /**
  * The site's signature moment: a live layered preview of the bouquet as
@@ -42,11 +43,11 @@ export function BouquetPreview({
 
   return (
     <div className="flex flex-col">
-      <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-petal bg-gradient-to-b from-blush/30 via-ivory to-stone/40 shadow-bloom-lg">
+      <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-petal bg-gradient-to-b from-blush/30 via-ivory to-stone/40 shadow-bloom-lg [perspective:1000px]">
         {/* Soft ambient bloom behind everything */}
         <div
           aria-hidden
-          className="absolute inset-[12%] rounded-full bg-blush/20 blur-2xl"
+          className="preview-float absolute inset-[12%] rounded-full bg-blush/20 blur-xl"
         />
 
         <AnimatePresence>
@@ -185,7 +186,7 @@ function PreviewLayer({
             fill
             sizes="200px"
             className="object-contain drop-shadow-md"
-            unoptimized={!component.imageUrl.includes("images.unsplash.com")}
+            unoptimized={!canOptimizeImage(component.imageUrl)}
           />
         </div>
       ) : (

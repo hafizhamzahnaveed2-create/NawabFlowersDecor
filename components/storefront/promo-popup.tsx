@@ -25,7 +25,8 @@ export function PromoPopup({ popup }: { popup: PopupData | null }) {
     } catch {
       /* ignore */
     }
-    const t = setTimeout(() => setOpen(true), 800);
+    // Wait until welcome splash has usually finished so overlays don't stack.
+    const t = setTimeout(() => setOpen(true), 2800);
     return () => clearTimeout(t);
   }, [popup]);
 

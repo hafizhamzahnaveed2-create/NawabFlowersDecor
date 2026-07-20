@@ -179,6 +179,166 @@ html[data-welcome="active"] #site-brand-logo {
   animation: soft-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Welcome splash — CSS petal fall (GPU transforms, no Framer loops). */
+@keyframes rose-petal-fall {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotateX(18deg) rotateY(0deg) rotateZ(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate3d(var(--petal-drift, 24px), 115vh, 0) rotateX(-28deg)
+      rotateY(220deg) rotateZ(140deg);
+    opacity: 0;
+  }
+}
+
+.rose-petal {
+  transform-style: preserve-3d;
+  animation: rose-petal-fall var(--petal-duration, 4.5s) linear var(--petal-delay, 0s)
+    infinite;
+}
+
+/* Product / category cards — subtle 3D tilt on hover. */
+.card-3d {
+  perspective: 900px;
+  transform-style: preserve-3d;
+}
+
+.card-3d-inner {
+  transform: translateZ(0) rotateX(0deg) rotateY(0deg) translateY(0);
+  transition:
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.card-3d:hover .card-3d-inner {
+  transform: translateY(-6px) rotateX(4deg) rotateY(-5deg) translateZ(8px);
+  box-shadow: var(--shadow-bloom-lg);
+}
+
+.tile-3d {
+  perspective: 800px;
+}
+
+.tile-3d-inner {
+  transform: translateZ(0) rotateX(0);
+  transition:
+    transform 400ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.tile-3d:hover .tile-3d-inner {
+  transform: translateY(-5px) rotateX(3deg) scale(1.01);
+  box-shadow: var(--shadow-bloom-lg);
+}
+
+/* Header nav — underline sweep on hover. */
+.nav-link {
+  position: relative;
+  transition: color 180ms ease;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.2em;
+  width: 100%;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 0.75;
+}
+
+.nav-link:hover {
+  color: var(--burgundy);
+}
+
+.nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+/* CTA polish — lift + light shine sweep. */
+.btn-lift {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    background-color 220ms ease;
+}
+
+.btn-lift:hover {
+  transform: translateY(-2px);
+}
+
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    background-color 220ms ease;
+}
+
+.btn-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 30%,
+    rgb(255 255 255 / 0.22) 48%,
+    transparent 62%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.55s ease;
+  pointer-events: none;
+}
+
+.btn-shine:hover {
+  transform: translateY(-2px);
+}
+
+.btn-shine:hover::after {
+  transform: translateX(120%);
+}
+
+/* Slow Ken Burns on hero stills (cheap, CSS-only). */
+@keyframes hero-ken {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+.hero-media-ken {
+  animation: hero-ken 14s ease-out alternate infinite;
+}
+
+/* Bouquet preview ambient float. */
+@keyframes preview-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.preview-float {
+  animation: preview-float 5.5s ease-in-out infinite;
+}
+
 /* Respect reduced motion globally; component animations must also check it. */
 @media (prefers-reduced-motion: reduce) {
   .announcement-marquee {
@@ -195,8 +355,23 @@ html[data-welcome="active"] #site-brand-logo {
     display: none;
   }
 
-  .soft-rise {
+  .soft-rise,
+  .rose-petal,
+  .hero-media-ken,
+  .preview-float {
     animation: none !important;
+  }
+
+  .card-3d:hover .card-3d-inner,
+  .tile-3d:hover .tile-3d-inner,
+  .btn-lift:hover,
+  .btn-shine:hover {
+    transform: none !important;
+  }
+
+  .btn-shine::after,
+  .nav-link::after {
+    display: none;
   }
 
   *,

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublishedBlogPost } from "@/lib/repositories/content";
+import { canOptimizeImage } from "@/lib/images";
 
 export async function generateMetadata({
   params,
@@ -49,7 +50,7 @@ export default async function BlogPostPage({
             priority
             sizes="(max-width: 768px) 100vw, 768px"
             className="object-cover"
-            unoptimized={!post.imageUrl.includes("images.unsplash.com")}
+            unoptimized={!canOptimizeImage(post.imageUrl)}
           />
         </div>
       )}
